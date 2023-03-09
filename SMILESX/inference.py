@@ -1,284 +1,140 @@
+"""Add main docstring discription
+
+"""
+
 import numpy as np
 import pandas as pd
 import os
 import glob
 
+import logging
+from tabulate import tabulate
+
 from rdkit import Chem
 
-from tensorflow.keras.models import Model, load_model
+from typing import Optional
+from typing import List
+
 from tensorflow.keras import metrics
 from tensorflow.keras import backend as K
 
-from SMILESX import utils, model, token, augm, main
+from SMILESX import utils, token, augm
 
-from pickle import load
+def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool = True, smiles_concat: bool = False, log_verbose: bool = True):
+    """Inference based on ensemble of trained SMILESX models
 
-## Inference on the SMILESX predictions
-# data_name: dataset's name
-# data_units: property's SI units
-# k_fold_number: number of k-folds used for inference (Default: None, i.e. automatically detect k_fold_number from main.Main phase)
-# k_fold_index: k-fold index to be used for visualization (Default: None, i.e. use all the models, then average)
-# augmentation: SMILES's augmentation (Default: False)
-# indir: directory of already trained prediction models (*.hdf5) and vocabulary (*.txt) (Default: '../data/')
-# outdir: directory for outputs (plots + .txt files) -> 'Inference/'+'{}/{}/'.format(data_name,p_dir_temp) is then created (Default: '../data/')
-# n_gpus: number of GPUs to be used in parallel (Default: 1)
-# gpus_list: list of GPU IDs to be used (Default: None), e.g. ['0','1','2']
-# gpus_debug: print out the GPUs ongoing usage 
-# return_attention: additionally return the attention map for interpretation (Default: False)
-# returns:
-#         Dataframe of SMILES with their inferred property (SMILES, mean, standard deviation) from models ensembling
-#      and,
-#         if return_attention == True:
-#            Two arrays of attention maps (mean, standard deviation) from models ensembling
-class Inference:
+    Prediction of the property based on the ensemble of SMILESX models.
+    Mean and standard deviation are computed over multiple models' predictions.
 
-    def __init__(self, 
-                 data_name, 
-                 data_units = '',
-                 k_fold_number = None,
-                 k_fold_index = None, 
-                 augmentation = False, 
-                 indir = "../data/", 
-                 outdir = "../data/", 
-                 n_gpus = 1, 
-                 gpus_list = None, 
-                 gpus_debug = False, 
-                 return_attention = False):
+    Parameters
+    ----------
+    model: list
+        The list of models to be used for inference.
+    data_smiles: list(str)
+        The list of SMILES to be characterized.
+    data_extra:
+        Additional data passed together with SMILES.
+    smiles_concat: bool
+        Whether to apply SMILES concatenation when multiple SMILES per entry are given.
+    log_verbose: bool
+        Whether to print the output to the console. (Default: True)
+    check_smiles: bool
+        Whether to check the SMILES via RDKit. (Default: True)
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe of SMILES with their inferred property (SMILES, mean, standard deviation)
+    """
+    
+    save_dir =  "{}/{}/{}/Inference/{}".format(model.outdir,
+                                               model.data_name,
+                                               'Augm' if model.augment else 'Can',
+                                               'Augm' if augment else 'Can')
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    logger, logfile = utils.log_setup(save_dir, 'Inference', log_verbose)
+    
+    logging.info("*************************************")
+    logging.info("***   SMILESX INFERENCE STARTED   ***")
+    logging.info("*************************************")
+    logging.error("")
+    
+    logging.info("Inference logs path:")
+    logging.info(logfile)
+    logging.info("")
+
+    if model.extra and data_extra is None:
+        logging.error("ERROR:")
+        logging.error("Additional input data has been used during the training of the loaded")
+        logging.error("model, but none are provided for inference. Please, use `data_extra`")
+        logging.error("to provide additional data.")
+        logging.error("")
+        logging.error("*** INFERENCE ABORTED ***")
+        raise utils.StopExecution
         
-        self.data_name = data_name
-        self.data_units = data_units
-        self.k_fold_number = k_fold_number
-        self.k_fold_index = k_fold_index
-        self.augmentation = augmentation
-        self.return_attention = return_attention
-        
-        # GPUs options
-        self.strategy, self.gpus = main.set_gpuoptions(n_gpus = n_gpus, 
-                                                       gpus_list = gpus_list, 
-                                                       gpus_debug = gpus_debug)
-        if self.strategy is None:
-            return
-        ##
-        
-        if augmentation:
-            p_dir_temp = 'Augm'
-            self.canonical = False
-            self.rotation = True
-            print("Data augmentation is required.")
-        else:
-            p_dir_temp = 'Can'
-            self.canonical = True
-            self.rotation = False
-            print("No data augmentation is required.")
+    logging.info("Full vocabulary: {}".format(model.tokens))
+    logging.info("Vocabulary size: {}".format(len(model.tokens)))
+    logging.info("Maximum length of tokenized SMILES: {} tokens.\n".format(model.max_length))
 
-        self.input_dir = indir+'Main/'+'{}/{}/'.format(data_name,p_dir_temp)
-        if self.return_attention is False:
-            self.save_dir = outdir+'Inference/'+'{}/{}/'.format(data_name,p_dir_temp)
-        else:
-            self.save_dir = outdir+'Interpretation/'+'{}/{}/'.format(data_name,p_dir_temp)
-        os.makedirs(self.save_dir, exist_ok=True)
-
-        for itype in ["txt","hdf5","pkl"]:
-            exists_file = glob.glob(self.input_dir + "*." + itype)
-            exists_file_len = len(exists_file)
-            if exists_file_len > 0:
-                if itype == "hdf5":
-                    if self.k_fold_number is None:
-                        self.k_fold_number = exists_file_len
+    data_smiles = np.array(data_smiles)
+    if model.extra:
+        data_extra = np.array(data_extra)
+    # Checking and/or augmenting the SMILES if requested
+    smiles_enum, extra_enum, _, smiles_enum_card = augm.augmentation(data_smiles=data_smiles,
+                                                                     data_extra=data_extra,
+                                                                     data_prop=None,
+                                                                     check_smiles=check_smiles,
+                                                                     augment=augment)
+    # Concatenate multiple SMILES into one via 'j' joint
+    if smiles_concat:
+        smiles_enum = utils.smiles_concat(smiles_enum)
+        
+    logging.info("Number of enumerated SMILES: {}".format(len(smiles_enum)))
+    logging.info("")
+    logging.info("Tokenization of SMILES...")
+    smiles_enum_tokens = token.get_tokens(smiles_enum)
+    smiles_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=smiles_enum_tokens,
+                                                       max_length=model.max_length,
+                                                       vocab=model.tokens)
+    # Model ensembling
+    preds_enum = np.empty((len(smiles_enum), model.k_fold_number*model.n_runs), dtype='float')
+    for ifold in range(model.k_fold_number):
+        # Scale additional data if provided
+        if model.extra:
+            # Load the scalers from pickle
+            data_extra = model.extra_scaler_dic["Fold_{}".format(ifold)].transform(extra_enum)
+        for run in range(model.n_runs):
+            imodel = model.model_dic["Fold_{}".format(ifold)][run]
+            # Predict and compare for the training, validation and test sets
+            # Compute a mean per set of augmented SMILES
+            if model.extra:
+                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec, "extra": extra_enum})
             else:
-                print("***Process of inference automatically aborted!***")
-                if itype == "hdf5":
-                    print("The input directory does not contain any trained models (*.hdf5 files).\n")
-                else:
-                    print("The input directory does not contain any vocabulary (*_Vocabulary.txt file) or data scaler (*.pkl file).\n")
-                return
-        
-        # Setting up the scalers, trained models, and vocabulary
-        self.scalers_list = []
-        self.models_list = []
-        self.att_list = []
-        self.max_length = 0
-        
-        # Tokens as a list
-        self.tokens = token.get_vocab(self.input_dir+self.data_name+'_Vocabulary.txt')
-        # Add 'pad', 'unk' tokens to the existing list
-        vocab_size = len(self.tokens)
-        self.tokens, vocab_size = token.add_extra_tokens(self.tokens, vocab_size)
-        print("Full vocabulary: {}, of size: {}.".format(self.tokens, vocab_size))
-        
-        if self.k_fold_index is not None and self.k_fold_number is not None:
-            if self.k_fold_index >= self.k_fold_number:
-                print("***Process of inference automatically aborted!***")
-                print("The condition \"0 <= k_fold_index < k_fold_number\" is not respected.\n")
-                return
-        
-        for ifold in range(self.k_fold_number):
-            
-            if self.k_fold_index is not None:
-                if ifold != self.k_fold_index:
-                    continue
-            
-            # Load the scaler
-            self.scalers_list.append(load(open(self.input_dir+'scaler_fold_' + str(ifold) + '.pkl', 'rb')))
-
-            K.clear_session()
-            # Model's architecture
-            model_tmp = load_model(self.input_dir+'LSTMAtt_'+self.data_name+'_model.best_fold_'+str(ifold)+'.hdf5', 
-                                   custom_objects={'AttentionM': model.AttentionM()})
-            self.models_list.append(model_tmp)
-            
-            # max_length retrieval
-            if (ifold == 0) or (ifold == self.k_fold_index):
-                # Maximum of length of SMILES to process
-                self.max_length = self.models_list[0].layers[0].output_shape[-1][1]
-                print("Maximum length of tokenized SMILES: {} tokens.\n".format(self.max_length))
-            
-            if self.return_attention is True:
-                best_arch = [model_tmp.layers[2].output_shape[-1]//2, 
-                             model_tmp.layers[3].output_shape[-1], 
-                             model_tmp.layers[1].output_shape[-1]]
-                # Architecture to return attention weights
-                K.clear_session()
-                att_tmp = model.LSTMAttModel.create(inputtokens = self.max_length, 
-                                                    vocabsize = vocab_size, 
-                                                    lstmunits= best_arch[0], 
-                                                    denseunits = best_arch[1], 
-                                                    embedding = best_arch[2], 
-                                                    return_proba = True)
-
-                att_tmp.load_weights(self.input_dir+'LSTMAtt_'+self.data_name+'_model.best_fold_'+str(ifold)+'.hdf5', 
-                                     by_name= True, 
-                                     skip_mismatch = True)
-
-                intermediate_layer_model = Model(inputs = att_tmp.input,
-                                                 outputs = att_tmp.layers[-2].output)
-                self.att_list.append(intermediate_layer_model)
-        
-        if self.return_attention is True:
-            print("********************************************")
-            print("***SMILES_X for interpretation initiated.***")
-            print("********************************************\n")
-        else:
-            print("***************************************")
-            print("***SMILES_X for inference initiated.***")
-            print("***************************************\n")
-
-    # smiles_list: targeted SMILES list for property inference (Default: ['CC','CCC','C=O'])
-    # check_smiles: check the SMILES' correctness via RDKit (Default: True)
-    # return_att: return the attention map for interpretation (Default: False), i.e. Interpretation init => Infer alone, or Infer + Att map
-    def infer(self, smiles_list = ['CC','CCC','C=O'], check_smiles = True, return_att = False):
-        
-        if self.return_attention is False:
-            print("**************************************")
-            print("***SMILES_X for inference starts...***")
-            print("**************************************\n")
-
-        if check_smiles:
-            print("Checking the SMILES list for inference.")
-            smiles_checked = list()
-            smiles_rejected = list()
-            for ismiles in smiles_list:
-                mol_tmp = Chem.MolFromSmiles(ismiles)
-                if mol_tmp != None:
-                    smiles_can = Chem.MolToSmiles(mol_tmp)
-                    smiles_checked.append(smiles_can)
-                else:
-                    smiles_rejected.append(ismiles)
-
-            if len(smiles_rejected) > 0:
-                with open(self.save_dir+'rejected_smiles.txt','w') as f:
-                    for ismiles in smiles_rejected:
-                        f.write("%s\n" % ismiles)
-                print("Check the {} file for {} rejected SMILES.".format(self.save_dir+'rejected_smiles.txt', len(smiles_rejected)))
-
-            if len(smiles_checked) == 0:
-                print("***Process of inference automatically aborted!***")
-                print("The provided SMILES are all incorrect and could not be sanitized via RDKit.\n")
-                return
-        else:
-            smiles_checked = smiles_list
-
-        smiles_checked_len = len(smiles_checked)
-        smiles_x = np.array(smiles_checked)
-        smiles_y = np.array([[np.nan]*smiles_checked_len]).flatten()
-
-        if check_smiles:
-            smiles_x_enum, smiles_x_enum_card, _ = augm.Augmentation(smiles_x, smiles_y, 
-                                                                     canon=self.canonical, 
-                                                                     rotate=self.rotation)
-
-            print("Number of enumerated SMILES: {}.".format(smiles_x_enum.shape[0]))
-
-            print("Tokenization of SMILES.\n")
-            
-            # Tokenize SMILES 
-            smiles_x_enum_tokens = token.get_tokens(smiles_x_enum)
-            
-            # Encode the tokens to integers from enumerated SMILES
-            smiles_x_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list = smiles_x_enum_tokens, 
-                                                                 max_length = self.max_length, 
-                                                                 vocab = self.tokens)
-            
-        # Tokenize SMILES 
-        smiles_x_tokens = token.get_tokens(smiles_x)
-
-        # Encode the tokens to integers from non-enumerated SMILES
-        smiles_x_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list = smiles_x_tokens, 
-                                                        max_length = self.max_length, 
-                                                        vocab = self.tokens)
-        
-        # models ensembling
-        smiles_y_pred_mean_array = np.empty(shape=(0,smiles_checked_len), dtype='float')
-        smiles_att_map_array = np.empty(shape=(0,smiles_checked_len,self.max_length), dtype='float')
-        for ifold in range(self.k_fold_number):
-            
-            if self.k_fold_index is not None:
-                if ifold != self.k_fold_index:
-                    continue
-            
-            # predict and compare for the training, validation and test sets
-            # compute a mean per set of augmented SMILES
-            if check_smiles:
-                smiles_y_pred = self.models_list[ifold].predict(smiles_x_enum_tokens_tointvec)
-                smiles_y_pred_mean, _ = utils.mean_median_result(smiles_x_enum_card, smiles_y_pred)
+                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec})
+            if model.scale_output:
+                # Unscale predictions
+                ipred_unscaled = model.output_scaler_dic["Fold_{}".format(ifold)].inverse_transform(ipred.reshape(-1,1))
             else:
-                smiles_y_pred_mean = self.models_list[ifold].predict(smiles_x_tokens_tointvec)
-            # unscale prediction's outcomes
-            smiles_y_pred_mean = self.scalers_list[ifold].inverse_transform(smiles_y_pred_mean.reshape(-1,1))
+                ipred_unscaled = ipred
+            # Store predictions in an array
+            preds_enum[:, ifold * model.n_runs + run] = ipred_unscaled.flatten()
 
-            smiles_y_pred_mean_array = np.append(smiles_y_pred_mean_array, smiles_y_pred_mean.reshape(1,-1), axis = 0)
+    preds_mean, preds_std = utils.mean_result(smiles_enum_card, preds_enum)
 
-            # Return average attention map
-            if self.return_attention is True and return_att is True:     
-                # extract only one attention map per non-enumerated SMILES of shape (batch_size, max_length)
-                smiles_att = np.squeeze(self.att_list[ifold].predict(smiles_x_tokens_tointvec), axis=2)
-                
-                smiles_att_map_array = np.append(smiles_att_map_array, smiles_att.reshape(1,smiles_checked_len,self.max_length), axis = 0)
-            
-            if (ifold == (self.k_fold_number-1)) or (ifold == self.k_fold_index):
-                
-                # Mean and standard deviation on predictions from models ensembling
-                # Shape: (batch_size,)
-                smiles_y_pred_mean_ensemble = np.mean(smiles_y_pred_mean_array, axis = 0)
-                smiles_y_pred_sd_ensemble = np.std(smiles_y_pred_mean_array, axis = 0)
+    preds = pd.DataFrame()
+    preds['SMILES'] = data_smiles
+    preds['mean'] = preds_mean
+    preds['sigma'] = preds_std
+    logging.info("")
+    logging.info("Prediction results:\n" \
+                 + tabulate(preds, ['SMILES', 'Prediction (mean)', 'Prediction (std)']))
+    logging.info("")
 
-                pred_from_ens = pd.DataFrame(data=[smiles_x,
-                                                   smiles_y_pred_mean_ensemble,
-                                                   smiles_y_pred_sd_ensemble]).T
-                pred_from_ens.columns = ['SMILES', 'ens_pred_mean', 'ens_pred_sd']
+    logging.info("***************************************")
+    logging.info("***   SMILESX INFERENCE COMPLETED   ***")
+    logging.info("***************************************")
 
-                if self.return_attention is True and return_att is True:
-                    # Mean and standard deviation on attention maps from models ensembling
-                    # Shape: (batch_size, max_length)
-                    smiles_att_mean_ensemble = np.mean(smiles_att_map_array, axis = 0)
-                    smiles_att_std_ensemble = np.std(smiles_att_map_array, axis = 0)
-
-                    return pred_from_ens, smiles_att_mean_ensemble, smiles_att_std_ensemble, smiles_x_tokens
-                else:
-                    if self.return_attention is False:
-                        print("****************************************")
-                        print("***Inference of SMILES property done.***")
-                        print("****************************************\n")
-
-                    return pred_from_ens
+    return preds
 ##
