@@ -1,229 +1,319 @@
-import os
-import math
 import numpy as np
 import pandas as pd
-import collections
-import matplotlib.pyplot as plt
+import os
+import math
+import glob
 
-from scipy.ndimage.interpolation import shift
-from sklearn.preprocessing import MinMaxScaler
+import logging
+from tabulate import tabulate
 
 from rdkit import Chem
 from rdkit.Chem import Draw
 
+from typing import Optional
+from typing import List
+
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import metrics
+from tensorflow.keras import backend as K
 
-from SMILESX import utils, model, token, augm, main, inference
+from SMILESX import utils, token, augm, visutils, inference
 
-from pickle import load
+def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: bool = True, check_smiles: bool = True, smiles_concat: bool = False, font_size: int = 15, font_rotation: str = 'horizontal'):
+    """Inference based on ensemble of trained SMILESX models
 
-## Interpretation of the SMILESX predictions
-# data: provided data (dataframe of: (SMILES, property))
-# data_name: dataset's name
-# data_units: property's SI units
-# k_fold_number: number of k-folds used for inference (Default: None, i.e. automatically detect k_fold_number from main.Main phase)
-# k_fold_index: k-fold index to be used for visualization (Default: None, i.e. use all the models, then average)
-# augmentation: SMILES's augmentation (Default: False)
-# indir: directory of already trained prediction models (*.hdf5) and vocabulary (*.txt) (Default: '../data/')
-# outdir: directory for outputs (plots + .txt files) -> 'Interpretation/'+'{}/{}/'.format(data_name,p_dir_temp) is then created
-# font_size: font's size for writing SMILES tokens (Default: 15)
-# font_rotation: font's orientation (Default: 'horizontal')
-# returns:
-#         The 1D and 2D attention maps 
-#             The redder and darker the color is, 
-#             the stronger is the attention on a given token. 
-#         The temporal relative distance Tdist 
-#             The closer to zero is the distance value, 
-#             the closer is the temporary prediction on the SMILES fragment to the whole SMILES prediction.
-class Interpretation:
+    Prediction of the property based on the ensemble of SMILESX models.
+    Mean and standard deviation are computed over multiple models' predictions.
 
-    def __init__(self, 
-                 data, 
-                 data_name, 
-                 data_units = '',
-                 k_fold_number = None,
-                 k_fold_index = None,
-                 augmentation = False, 
-                 indir = "../data/", 
-                 outdir = "../data/", 
-                 font_size = 15, 
-                 font_rotation = 'vertical'):
+    Parameters
+    ----------
+    model: list
+        The list of models to be used for inference
+    smiles: list(str)
+        The list of SMILES to be characterized
+    log_verbose: bool
+        Whether to print the output to the consol (Default: True)
+    check_smiles: bool
+        Whether to check the SMILES via RDKit (Default: True)
+    font_size: int
+        Size of the font SMILES tokens. (Default: 15)
+    font_rotation: {'horizontal', 'vertical'}
+        font's size for writing SMILES tokens (Default: 15)
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe of SMILES with their inferred property (SMILES, mean, standard deviation)
+    """
+
+    save_dir =  "{}/{}/{}/Interpret".format(model.outdir,
+                                            model.data_name,
+                                            'Augm' if model.augment else 'Can')
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    logger, logfile = utils.log_setup(save_dir, 'Interpret', log_verbose)
+
+    logging.info("******************************************")
+    logging.info("***   SMILESX INTERPRETATION STARTED   ***")
+    logging.info("******************************************")
+    logging.info("")
+
+    logging.info("Interpretation logs path:")
+    logging.info(logfile)
+    logging.info("")
     
-        self.data = data
-        self.data_name = data_name
-        self.data_units = data_units
-        self.k_fold_number = k_fold_number
-        self.k_fold_index = k_fold_index
-        self.augmentation = augmentation
-        self.indir = indir
-        self.outdir = outdir
-        self.font_size = font_size
-        self.font_rotation = font_rotation
+    smiles = smiles.values
+    if pred is None:
+        logging.info("Predictions are not provided.")
+        logging.info("Only ground truth values will be displayed on the attention maps.")
+        logging.info("Predictions can be obtained via `inference` funcionality.")
+        logging.info("")
+        print_pred = False
+    else:
+        pred = pred.values
+        print_pred = True
+    if true is None:
+        logging.info("Ground truth property values are not provided.")
+        logging.info("They will not be displayed on the attention maps.")
+        logging.info("")
+        print_true = False
+    else:
+        true = true.values
+        print_true = True
+    if true_err is None:
+        print_err = False
+    else:
+        # Setting up errors printing format
+        true_err = true_err.values
+        if true_err.shape[1] is None:
+            true_err = true_err.reshape(-1,1)
+        if true_err.shape[1] == 1:
+            err_format = 'std'
+        elif true_err.shape[1] == 2:
+            err_format = 'minmax'
+            true_err = visutils.error_format(true.reshape(-1,1), true_err, 'minmax').T
+            print(true_err)
+            print(true)
+        print_err = True
+
+    logging.info("Full vocabulary: {}".format(model.tokens))
+    logging.info("Vocabulary size: {}".format(len(model.tokens)))
+    logging.info("Maximum length of tokenized SMILES: {} tokens.\n".format(model.max_length))
+    
+    # For the moment, no augmentation is implemented
+    smiles_enum, _, _, _ = augm.augmentation(data_smiles=smiles,
+                                             data_extra=None,
+                                             data_prop=None,
+                                             check_smiles=check_smiles,
+                                             augment=False)
+
+    # Concatenate multiple SMILES into one via 'j' joint
+    if smiles_concat:
+        smiles_enum = utils.smiles_concat(smiles_enum)
+
+    # Tokenize SMILES
+    smiles_enum_tokens = token.get_tokens(smiles_enum)
+    # Encode the tokens into integers
+    smiles_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list = smiles_enum_tokens, 
+                                                       max_length = model.max_length, 
+                                                       vocab = model.tokens)
+    # Collect attention vectors from trained models
+    att_map = np.empty((model.k_fold_number * model.n_runs, len(smiles_enum_tokens), model.max_length), dtype='float')
+    for ifold in range(model.k_fold_number):
+        for run in range(model.n_runs):
+            imodel = model.att_dic["Fold_{}".format(ifold)][run]
+            iatt = imodel.predict({"smiles": smiles_enum_tokens_tointvec})
+            smiles_att = np.squeeze(iatt, axis=2).reshape(1, len(smiles_enum_tokens), model.max_length)
+            att_map[ifold*model.n_runs + run, :, :] = smiles_att
+    # Mean and standard deviation on attention maps from models ensembling
+    att_map_mean = np.mean(att_map, axis = 0)
+    att_map_std = np.std(att_map, axis = 0)
+    
+    print(smiles_enum_tokens)
+    for i, ismiles in enumerate(smiles_enum_tokens):
         
-        self.Inference_class = inference.Inference(data_name = self.data_name, 
-                                                   data_units = self.data_units,
-                                                   k_fold_number = self.k_fold_number,
-                                                   k_fold_index = self.k_fold_index, 
-                                                   augmentation = self.augmentation, 
-                                                   indir = self.indir, 
-                                                   outdir = self.outdir, 
-                                                   return_attention = True)
+        logging.info("*******")
+        logging.info("SMILES: {}".format(smiles[i]))
+
+        ismiles = ismiles[1:-1] # Remove padding
+        ismiles_len = len(ismiles)
+        iatt_map_mean = att_map_mean[i,-ismiles_len-1:-1]
+
+        # 1D attention map
+        plt.matshow([iatt_map_mean], cmap='Reds') # SMILES padding excluded
+        plt.tick_params(axis='x', bottom = False)
+        plt.xticks(np.arange(ismiles_len), ismiles)#, fontsize=font_size, rotation=font_rotation)
+        plt.yticks([])
+        plt.savefig(save_dir + '/1D_Interpretation_' + str(i) + '.png', bbox_inches='tight')
+        plt.show()
         
-        if augmentation:
-            p_dir_temp = 'Augm'
+        if print_pred:
+            prec = visutils.output_prec(pred[i, 0], 3)
+        if print_true:
+            true_val = "{0}".format(true[i])
+            if print_err:
+                if err_format == 'minmax':
+                    true_val += "$_{{-{0}}}^{{+{1}}}$".format(str(true_err[i, 0]),
+                                                              str(true_err[i, 1]))
+                elif err_format == 'std':
+                    true_val += "$\pm$ {1:0.02f}".format(true_err[i])
         else:
-            p_dir_temp = 'Can'
-
-        self.input_dir = self.indir+'Main/'+'{}/{}/'.format(self.data_name,p_dir_temp)
-        self.save_dir = self.outdir+'Interpretation/'+'{}/{}/'.format(self.data_name,p_dir_temp)
-    
-    # smiles_list: targeted list of SMILES to visualize (Default: ['CC','CCC','C=O'])
-    # num_precision: numerical precision for displaying the predicted values (Default: 2)
-    def interpret(self, smiles_list = ['CC','CCC','C=O'], num_precision = 2):
-
-        print("************************************")
-        print("***SMILES_X Interpreter starts...***")
-        print("************************************\n")
+            true_val = None
+        if print_pred:
+            pred_val="{1:{0}f} $\pm$ {2:{0}f}".format(prec,
+                                                      pred[i, 0],
+                                                      pred[i, 1])
+        else:
+            pred_val = None
         
-        # Output shapes:
-        # Predictions: (batch_size,)
-        # attention maps: (batch_size, max_length)
-        # List of list of tokens: (batch_size) x (length of tokenized SMILES with padding)
-        y_pred_dataframe, att_map_mean, att_map_std, smiles_x_tokens = \
-            self.Inference_class.infer(smiles_list, check_smiles = True, return_att = True)
-        smiles_x_retrieval = [''.join(ismiles[1:-1]) for ismiles in smiles_x_tokens]
-        smiles_list_len = len(smiles_x_retrieval)
-        smiles_x_tokens_len = [len(ismiles) for ismiles in smiles_x_tokens]
-        y_true = np.zeros((smiles_list_len,), dtype='float')
-        for ismiles, smiles_tmp in enumerate(smiles_x_retrieval):
-            if smiles_tmp in self.data.smiles.values.tolist():
-                y_true[ismiles] = self.data.iloc[np.where(self.data.smiles == smiles_tmp)[0][0],1]
-            else:
-                y_true[ismiles] = np.nan
-        
-        for ismiles in range(smiles_list_len): 
-            
-            print("\n\n*******")
-            print("SMILES: {}".format(smiles_x_retrieval[ismiles]))
-            
-            # Predictions
-            value_toprint = "Predicted value: {1:.{0}f} +/- {2:.{0}f} {3}".format(num_precision, 
-                                                                                  y_pred_dataframe.iloc[ismiles,1], 
-                                                                                  y_pred_dataframe.iloc[ismiles,2], 
-                                                                                  self.data_units)
-            value_toprint += "\nExp/Sim value: {1:.{0}f} {2}\n".format(num_precision, 
-                                                                       y_true[ismiles], 
-                                                                       self.data_units)
-            print(value_toprint)
-            with open(self.save_dir+'smiles_metadata_'+str(ismiles)+'.txt','w') as f:
-                f.write("SMILES: %s\n" % smiles_x_retrieval[ismiles])
-                f.write("%s\n" % value_toprint)
-            
-            smiles_tmp = smiles_x_tokens[ismiles]
-            smiles_len_tmp = smiles_x_tokens_len[ismiles]
-            
-            # 1D attention map
-            plt.matshow(att_map_mean[ismiles,-smiles_len_tmp+1:-1].flatten().reshape(1,-1), cmap='Reds') # SMILES padding excluded
-            plt.tick_params(axis='x', bottom = False)
-            plt.xticks(np.arange(smiles_len_tmp-2), smiles_tmp[1:-1], fontsize = self.font_size, rotation = self.font_rotation)
-            plt.yticks([])
-            plt.savefig(self.save_dir+'smiles_interpretation1D_'+str(ismiles)+'.png', bbox_inches='tight')
-            plt.show()
+        # 2D attention map
+        mol_tmp = Chem.MolFromSmiles(smiles[i])
+        mol_df_tmp = pd.DataFrame([ismiles, att_map_mean[i].\
+                                   flatten().tolist()[-ismiles_len-1:-1]]).transpose()
+        bond = ['-','=','#','$','/','\\','.','(',')']
+        mol_df_tmp = mol_df_tmp[~mol_df_tmp.iloc[:,0].isin(bond)]
+        mol_df_tmp = mol_df_tmp[[not itoken.isdigit() for itoken in mol_df_tmp.iloc[:,0].values.tolist()]]
 
-            # 2D attention map
-            mol_tmp = Chem.MolFromSmiles(smiles_x_retrieval[ismiles])
-            mol_df_tmp = pd.DataFrame([smiles_tmp[1:-1], att_map_mean[ismiles].\
-                                       flatten().\
-                                       tolist()[-smiles_len_tmp+1:-1]]).transpose()
-            bond = ['-','=','#','$','/','\\','.','(',')']
-            mol_df_tmp = mol_df_tmp[~mol_df_tmp.iloc[:,0].isin(bond)]
-            mol_df_tmp = mol_df_tmp[[not itoken.isdigit() for itoken in mol_df_tmp.iloc[:,0].values.tolist()]]
+        minmaxscaler = MinMaxScaler(feature_range=(0,1))
+        norm_weights = minmaxscaler.fit_transform(mol_df_tmp.iloc[:,1].values.reshape(-1,1)).flatten().tolist()
 
-            minmaxscaler = MinMaxScaler(feature_range=(0,1))
-            norm_weights = minmaxscaler.fit_transform(mol_df_tmp.iloc[:,1].values.reshape(-1,1)).flatten().tolist()
-            fig_tmp = GetSimilarityMapFromWeights(mol=mol_tmp, 
+        fig_tmp = get_similarity_map_from_weights(mol=mol_tmp,
+                                                  pred_val=pred_val,
+                                                  true_val=true_val,
                                                   sigma=0.05,
                                                   weights=norm_weights, 
                                                   colorMap='Reds', 
                                                   alpha = 0.25)
-            plt.savefig(self.save_dir+'smiles_interpretation2D_'+str(ismiles)+'.png', bbox_inches='tight')
-            plt.show()
-
-            # Temporal relative distance plot
-            # Observation based on non-augmented SMILES because of SMILES sequential elongation
+        
+        plt.savefig(save_dir+'/2D_Interpretation_'+str(i)+'.png', bbox_inches='tight')
+        plt.show()
+        
+        # Temporal relative distance plot
+        # Cannot be built in case where the model is trained with additional numerical data
+        # Observation based on non-augmented SMILES because of SMILES sequential elongation
+        if model.extra is False:
             plt.figure(figsize=(15,7))
             diff_topred_list = list()
-            isubsmiles_list = list()
-            for csubsmiles in range(2,smiles_len_tmp):
-                isubsmiles_list.append(''.join(smiles_tmp[1:csubsmiles]))
-            predict_prop_tmp = self.Inference_class.infer(isubsmiles_list, check_smiles = False, return_att = False)
-            predict_prop_last = predict_prop_tmp.ens_pred_mean.values[-1]
-            diff_topred_tmp = (predict_prop_tmp.ens_pred_mean.values-predict_prop_last)/np.abs(predict_prop_last)
-            max_diff_topred_tmp = np.max(diff_topred_tmp)
+            subsmiles_list = []
+            fragment = ""
+            for j in ismiles:
+                fragment += j
+                subsmiles_list.append(fragment)
+            # Predict property for subsmiles
+            ipreds = inference.infer(model=model,
+                                     data_smiles=subsmiles_list,
+                                     data_extra=None,
+                                     augment=False,
+                                     check_smiles=False,
+                                     log_verbose=False)
+            ipreds_mean = ipreds['mean'].values
+            relative_diff = (ipreds_mean-ipreds_mean[-1])/np.abs(ipreds_mean[-1])
+            max_relative_diff = np.max(relative_diff)
 
-            markers, stemlines, baseline = plt.stem([ix for ix in range(1,smiles_len_tmp-1)], 
-                                                    diff_topred_tmp, 
-                                                    'k.-', 
-                                                     use_line_collection=True)
+            markers, stemlines, baseline = plt.stem([ix for ix in range(ismiles_len)],
+                                                    relative_diff,
+                                                    'k.-',
+                                                    use_line_collection=True)
+
             plt.setp(baseline, color='k', linewidth=2, linestyle='--')
             plt.setp(markers, linewidth=1, marker='o', markersize=10, markeredgecolor = 'black')
             plt.setp(stemlines, color = 'k', linewidth=0.5, linestyle='-')
-            plt.xticks(range(1,smiles_len_tmp-1), 
-                       smiles_tmp[1:-1],
-                       fontsize = self.font_size, 
-                       rotation = self.font_rotation)
+            plt.xticks(range(ismiles_len),
+                       ismiles,
+                       fontsize = font_size,
+                       rotation = font_rotation)
             plt.yticks(fontsize = 20)
             plt.ylabel('Cumulative SMILES path', fontsize = 20, labelpad = 15)
             plt.ylabel('Temporal relative distance', fontsize = 20, labelpad = 15)
-            plt.savefig(self.save_dir+'smiles_interpretation_trd_'+str(ismiles)+'.png', bbox_inches='tight')
+            plt.savefig(save_dir+'Temporal_Relative_Distance_smiles_'+str(i)+'.png', bbox_inches='tight')
             plt.show()
-            
-        print("\n\n********************************")
-        print("***SMILES_X Interpreter done.***")
-        print("********************************\n")
+    
+    logging.info("********************************************")
+    logging.info("***   SMILESX INTERPRETATION COMPLETED   ***")
+    logging.info("********************************************")
 ##
 
 ## Attention weights depiction
 # from https://github.com/rdkit/rdkit/blob/24f1737839c9302489cadc473d8d9196ad9187b4/rdkit/Chem/Draw/SimilarityMaps.py
-# returns:
-#         a similarity map for a molecule given the attention weights
-def GetSimilarityMapFromWeights(mol, weights, colorMap=None, size=(250, 250),
-                                sigma=0.05, coordScale=1.5, step=0.01, colors='k', contourLines=10,
-                                alpha=0.5, **kwargs):
+def get_similarity_map_from_weights(mol, weights, pred_val, true_val = False, colorMap=None, size=(250, 250), sigma=0.05, coordScale=1.5, step=0.01, colors='k', contourLines=10, alpha=0.5, **kwargs):
+    """Generates the similarity map for a molecule given the atomic weights.
+
+    Attention weights depiction from
+    https://github.com/rdkit/rdkit/blob/24f1737839c9302489cadc473d8d9196ad9187b4/rdkit/Chem/Draw/SimilarityMaps.py.
+
+    Parameters
+    ----------
+    mol: RDKit.mol
+        The molecule of interest.
+    weights:
+        Attention weights representing the importance of each token.
+    pred_val: str
+        Predicted property value to be displayed.
+    true_val: str, optional
+        Ground truth property value to be displayed.
+    colorMap:
+        The matplotlib color map scheme, default is custom PiWG color map.
+    size: (int, int)
+        The size of the figure.
+    sigma: float
+        The sigma for the Gaussians.
+    coordScale: float
+        Scaling factor for the coordinates.
+    step: float
+        The step for calcAtomGaussian.
+    colors: str
+        Color of the contour lines (Default: 'k').
+    contourLines: int, list(int)
+        If integer, the number of contour lines to be drawn.
+        If list, the positions of contour lines to be drawn.
+    alpha: float
+        The alpha channel (transparancy degree) for the contour lines.
+    kwargs:
+        Additional arguments for drawing.
+
+    Returns
+    -------
+    figure
+        Figure with similarity map for a molecule given the attention weights.
     """
-    Generates the similarity map for a molecule given the atomic weights.
-    Parameters:
-    mol -- the molecule of interest
-    colorMap -- the matplotlib color map scheme, default is custom PiWG color map
-    size -- the size of the figure
-    sigma -- the sigma for the Gaussians
-    coordScale -- scaling factor for the coordinates
-    step -- the step for calcAtomGaussian
-    colors -- color of the contour lines
-    contourLines -- if integer number N: N contour lines are drawn
-                    if list(numbers): contour lines at these numbers are drawn
-    alpha -- the alpha blending value for the contour lines
-    kwargs -- additional arguments for drawing
-    """
+
     if mol.GetNumAtoms() < 2:
         raise ValueError("too few atoms")
     fig = Draw.MolToMPL(mol, coordScale=coordScale, size=size, **kwargs)
+    ax = fig.gca()
+    
     x, y, z = Draw.calcAtomGaussians(mol, sigma, weights=weights, step=step)
     # scaling
     maxScale = max(math.fabs(np.min(z)), math.fabs(np.max(z)))
     minScale = min(math.fabs(np.min(z)), math.fabs(np.max(z)))
+    
     fig.axes[0].imshow(z, cmap=colorMap, interpolation='bilinear', origin='lower',
                      extent=(0, 1, 0, 1), vmin=minScale, vmax=maxScale)
-    # contour lines
-    # only draw them when at least one weight is not zero
+    ax.imshow(z, cmap=colorMap, interpolation='bilinear', origin='lower',
+                     extent=(0, 1, 0, 1), vmin=minScale, vmax=maxScale)
+    # Contour lines
+    # Only draw them when at least one weight is not zero
     if len([w for w in weights if w != 0.0]):
-        contourset = fig.axes[0].contour(x, y, z, contourLines, colors=colors, alpha=alpha, **kwargs)
+        contourset = ax.contour(x, y, z, contourLines, colors=colors, alpha=alpha, **kwargs)
         for j, c in enumerate(contourset.collections):
             if contourset.levels[j] == 0.0:
                 c.set_linewidth(0.0)
             elif contourset.levels[j] < 0:
                 c.set_dashes([(0, (3.0, 3.0))])
-    fig.axes[0].set_axis_off()
+    if true_val:
+        ax.text(0.97, 0.02, r"Experimental: "+true_val+"\nPredicted: "+pred_val,
+        verticalalignment='bottom', horizontalalignment='right',
+        transform=ax.transAxes,
+        color='black', fontsize=16)
+    else:
+        ax.text(0.97, 0.02, r"Predicted: "+pred_val,
+        verticalalignment='bottom', horizontalalignment='right',
+        transform=ax.transAxes,
+        color='black', fontsize=16)
+    ax.set_axis_off()
     return fig
 ##

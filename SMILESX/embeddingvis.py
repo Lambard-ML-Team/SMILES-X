@@ -1,3 +1,7 @@
+"""Add main docstring discription
+
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,6 +34,7 @@ def Embedding_Vis(data,
                   data_name, 
                   k_fold_number = None,
                   k_fold_index = 0,
+                  n_runs = None,
                   augmentation = False, 
                   indir = "../data/", 
                   outdir = "../data/", 
@@ -45,21 +50,28 @@ def Embedding_Vis(data,
     save_dir = outdir+'Embedding_Vis/'+'{}/{}/'.format(data_name,p_dir_temp)
     os.makedirs(save_dir, exist_ok=True)
     
-    for itype in ["txt","hdf5"]:
-        exists_file = glob.glob(input_dir + "*." + itype)
-        exists_file_len = len(exists_file)
-        if exists_file_len > 0:
-            if itype == "hdf5":
-                if k_fold_number is None:
-                    k_fold_number = exists_file_len
-        else:
-            print("***Process of inference automatically aborted!***")
-            if itype == "hdf5":
-                print("The input directory does not contain any trained models (*.hdf5 files).\n")
+    for itype in ["txt","hdf5", "pkl"]:
+            if itype=="hdf5":
+                exists_file = glob.glob(input_dir + "fold_0/run_*/*." + itype)
             else:
-                print("The input directory does not contain any vocabulary (*_Vocabulary.txt file).\n")
-            return
-    
+                exists_file = glob.glob(input_dir + "*." + itype)
+            exists_file_len = len(exists_file)
+            if exists_file_len > 0:
+                if itype == "pkl":
+                    if k_fold_number is None:
+                        k_fold_number = exists_file_len
+                if itype == "hdf5":
+                    if n_runs is None:
+                        n_runs = exists_file_len
+            else:
+                print("***Process of inference automatically aborted!***")
+                if itype == "hdf5":
+                    print("The input directory does not contain any trained models (*.hdf5 files).\n")
+                else:
+                    print("The input directory does not contain any vocabulary (*_Vocabulary.txt file).\n")
+                return 
+        
+        
     if k_fold_index is not None and k_fold_number is not None: 
         if k_fold_index >= k_fold_number:
             print("***Process of inference automatically aborted!***")
@@ -73,6 +85,7 @@ def Embedding_Vis(data,
     kf = KFold(n_splits=k_fold_number, random_state=123, shuffle=True)
     data_smiles = data.smiles.values
     data_prop = data.iloc[:,1].values.reshape(-1,1)
+    data_err = data.iloc[:,2].values.reshape(-1,1)
     kf.get_n_splits(data_smiles)
     for ifold, (train_index, valid_test_index) in enumerate(kf.split(data_smiles)):
         
@@ -83,9 +96,10 @@ def Embedding_Vis(data,
 
         print("Splitting of the dataset.")
         # Reproducing the data split of the requested fold (k_fold_index)
-        x_train, _, _, y_train, _, _, _, _, _, _ = \
+        x_train, _, _, y_train, *_ = \
         utils.split_standardize(smiles_input = data_smiles, 
-                                prop_input = data_prop, 
+                                prop_input = data_prop,
+                                err_input = data_err,
                                 train_index = train_index, 
                                 valid_test_index = valid_test_index)
 
