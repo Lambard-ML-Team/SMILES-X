@@ -590,22 +590,33 @@ def main(data_smiles,
                                                                                      test=extra_test,
                                                                                      file_name=scaler_extra_file,
                                                                                      ifold=ifold)
+
         # Check/augment the data if requested
-        x_train_enum, extra_train_enum, y_train_enum, x_train_enum_card = augm.augmentation(x_train,
-                                                                                            extra_train,
-                                                                                            y_train_scaled,
-                                                                                            check_smiles,
-                                                                                            augmentation)
-        x_valid_enum, extra_valid_enum, y_valid_enum, x_valid_enum_card = augm.augmentation(x_valid,
-                                                                                            extra_valid,
-                                                                                            y_valid_scaled,
-                                                                                            check_smiles,
-                                                                                            augmentation)
-        x_test_enum, extra_test_enum, y_test_enum, x_test_enum_card = augm.augmentation(x_test,
-                                                                                        extra_test,
-                                                                                        y_test_scaled,
-                                                                                        check_smiles,
-                                                                                        augmentation)
+        train_augm = augm.augmentation(x_train,
+                                       train_val_idx,
+                                       extra_train,
+                                       y_train_scaled,
+                                       check_smiles,
+                                       augmentation)
+
+        valid_augm = augm.augmentation(x_valid,
+                                       train_val_idx,
+                                       extra_valid,
+                                       y_valid_scaled,
+                                       check_smiles,
+                                       augmentation)
+
+        test_augm = augm.augmentation(x_test,
+                                      test_idx,
+                                      extra_test,
+                                      y_test_scaled,
+                                      check_smiles,
+                                      augmentation)
+        
+        x_train_enum, extra_train_enum, y_train_enum, y_train_clean, x_train_enum_card, _ = train_augm
+        x_valid_enum, extra_valid_enum, y_valid_enum, y_valid_clean, x_valid_enum_card, _ = valid_augm
+        x_test_enum, extra_test_enum, y_test_enum, y_test_clean, x_test_enum_card, test_idx_clean = test_augm
+                
         # Concatenate multiple SMILES into one via 'j' joint
         if smiles_concat:
             x_train_enum = utils.smiles_concat(x_train_enum)
@@ -814,7 +825,12 @@ def main(data_smiles,
 
             # Checkpoint, Early stopping and callbacks definition
             filepath = '{}/{}_Model_Fold_{}_Run_{}.hdf5'.format(model_dir, data_name, ifold, run)
-            if train_mode != 'off':
+                
+            if train_mode == 'off' or os.path.exists(filepath):
+                logging.info("Training was set to `off`.")
+                logging.info("Evaluating performance based on the previously trained models...")
+                logging.info("")
+            else:
                 # Create and compile the model
                 K.clear_session()
                 # Freeze the first half of the network in case of transfer learning
@@ -984,10 +1000,6 @@ def main(data_smiles,
 
                 logging.info("Evaluating performance of the trained model...")
                 logging.info("")
-            else:
-                logging.info("Training was set to `off`.")
-                logging.info("Evaluating performance based on the previously trained models...")
-                logging.info("")
 
             with tf.device(gpus[0].name):
                 K.clear_session()
@@ -1006,10 +1018,14 @@ def main(data_smiles,
                 y_pred_train_unscaled = scaler.inverse_transform(y_pred_train.reshape(-1,1)).ravel()
                 y_pred_valid_unscaled = scaler.inverse_transform(y_pred_valid.reshape(-1,1)).ravel()
                 y_pred_test_unscaled = scaler.inverse_transform(y_pred_test.reshape(-1,1)).ravel()
+                
+                y_train_clean_unscaled = scaler.inverse_transform(y_train_clean.reshape(-1,1)).ravel()
+                y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
+                y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
             else:
                 y_pred_train_unscaled = y_pred_train.ravel()
                 y_pred_valid_unscaled = y_pred_valid.ravel()
-                y_pred_test_unscaled = y_pred_test.ravel()                
+                y_pred_test_unscaled = y_pred_test.ravel()
 
             prediction_train_bag[:, run] = y_pred_train_unscaled
             prediction_valid_bag[:, run] = y_pred_valid_unscaled
@@ -1019,16 +1035,16 @@ def main(data_smiles,
             y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled)
             y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled)
             y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled)
-
+            
             # Print the stats for the run
-            visutils.print_stats(trues=[y_train, y_valid, y_test],
+            visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                                  preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
                                  errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
                                  prec=prec, 
                                  model_type=model_type)
 
             # Plot prediction vs observation plots per run
-            visutils.plot_fit(trues=[y_train, y_valid, y_test],
+            visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                               preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
                               errs_true=[y_err_train, y_err_valid, y_err_test],
                               errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
@@ -1052,14 +1068,14 @@ def main(data_smiles,
         pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag)
 
         # Save the predictions to the final table
-        predictions.loc[test_idx, 'Mean'] = pred_test_mean.ravel()
-        predictions.loc[test_idx, 'Standard deviation'] = pred_test_sigma.ravel()
+        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
+        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
         predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
         
         logging.info("Fold {}, overall performance:".format(ifold))
 
         # Print the stats for the fold
-        fold_scores = visutils.print_stats(trues=[y_train, y_valid, y_test],
+        fold_scores = visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                                            preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
                                            errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
                                            prec=prec, 
@@ -1067,7 +1083,7 @@ def main(data_smiles,
         scores_folds.append([err for set_name in fold_scores for err in set_name])
 
         # Plot prediction vs observation plots for the fold
-        visutils.plot_fit(trues=[y_train, y_valid, y_test],
+        visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                           preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
                           errs_true=[y_err_train, y_err_valid, y_err_test],
                           errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
@@ -1094,8 +1110,11 @@ def main(data_smiles,
             logging.info("***Preparing the final out-of-sample prediction.***")
             logging.info("")
             
+            data_prop_clean = data_prop[predictions['Mean'].notna()]
+            predictions = predictions.dropna()
+
             # Print the stats for the whole data
-            final_scores = visutils.print_stats(trues=[data_prop],
+            final_scores = visutils.print_stats(trues=[data_prop_clean],
                                                 preds=[predictions['Mean'].values],
                                                 errs_pred=[predictions['Standard deviation'].values],
                                                 prec=prec, 
@@ -1104,7 +1123,7 @@ def main(data_smiles,
             scores_final = [err for set_name in final_scores for err in set_name]
             
             # Final plot for prediction vs observation
-            visutils.plot_fit(trues=[data_prop.reshape(-1,1)],
+            visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
                               preds=[predictions['Mean'].values],
                               errs_true=[data_err],
                               errs_pred=[predictions['Standard deviation'].values],

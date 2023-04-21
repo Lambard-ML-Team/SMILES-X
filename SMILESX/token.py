@@ -104,9 +104,12 @@ def smiles_tokenizer(smiles):
                "[0-9]|\%[0-9]{2}|" +\
                "\(|\))"
     regex = re.compile(patterns)
-    tokens = [token for token in regex.findall(smiles)]
-
-    return [' '] + tokens + [' ']
+    try:
+        tokens = [token for token in regex.findall(smiles)]
+        return [' '] + tokens + [' ']
+    except:
+        return [None]
+    
 ##
 
 def extract_vocab(lltokens):

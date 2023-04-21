@@ -12,7 +12,7 @@ from rdkit import Chem
 
 from SMILESX import utils
 
-def augmentation(data_smiles, data_extra=None, data_prop=None, check_smiles=True, augment=False):
+def augmentation(data_smiles, indices, data_extra=None, data_prop=None, check_smiles=True, augment=False):
     """Augmentation
 
     Parameters
@@ -53,9 +53,11 @@ def augmentation(data_smiles, data_extra=None, data_prop=None, check_smiles=True
 
     smiles_enum = []
     prop_enum = []
+    prop_clean = []
     extra_enum = []
     smiles_enum_card = []
     rejected_smiles = []
+    indices_to_remove = []
     
     for csmiles, ismiles in enumerate(data_smiles.tolist()):
         if augment:
@@ -65,16 +67,18 @@ def augmentation(data_smiles, data_extra=None, data_prop=None, check_smiles=True
                 enumerated_smiles = generate_smiles(ismiles, rotate=False)
             else:
                 enumerated_smiles = [ismiles]
-        if None not in enumerated_smiles:
+        if any(None in s for s in enumerated_smiles):
+            rejected_smiles.extend(ismiles)
+            indices_to_remove.append(csmiles)
+        else:
             # Store indices where same index corresponds to the same orginal SMILES
             smiles_enum_card.extend([csmiles] * len(enumerated_smiles))
             smiles_enum.extend(enumerated_smiles)
             if data_prop is not None:
                 prop_enum.extend([data_prop[csmiles]] * len(enumerated_smiles))
+                prop_clean.extend(data_prop[csmiles])
             if data_extra is not None:
                 extra_enum.extend([data_extra[csmiles]] * len(enumerated_smiles))
-        else:
-            rejected_smiles.extend(ismiles)
     if len(smiles_enum) == 0:
         logging.error("None of the provided SMILES is recognized as correct by RDKit.")
         logging.error("In case the SMILES data cannot be put to a correct format, set `check_smiles=False`.")
@@ -93,9 +97,12 @@ def augmentation(data_smiles, data_extra=None, data_prop=None, check_smiles=True
         extra_enum = np.array(extra_enum)
     if data_prop is None:
         prop_enum = None
+        prop_clean = None
     else:
         prop_enum = np.array(prop_enum)
-    return smiles_enum, extra_enum, prop_enum, smiles_enum_card
+        prop_clean = np.array(prop_clean)
+    indices_clean = np.delete(indices, indices_to_remove)
+    return smiles_enum, extra_enum, prop_enum, prop_clean, smiles_enum_card, indices_clean
 ##
 
 def rotate_atoms(li, x):
