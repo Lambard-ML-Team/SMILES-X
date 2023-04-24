@@ -146,16 +146,23 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
             else:
                 y_train_scaled, y_valid_scaled, y_test_scaled, scaler = y_train, y_valid, None, None
             # Check/augment the data if requested
-            x_train_enum, extra_train_enum, y_train_enum, _ = augm.augmentation(x_train,
-                                                                                extra_train,
-                                                                                y_train_scaled,
-                                                                                check_smiles,
-                                                                                augmentation)
-            x_valid_enum, extra_valid_enum, y_valid_enum, _ = augm.augmentation(x_valid,
-                                                                                extra_valid,
-                                                                                y_valid_scaled,
-                                                                                check_smiles,
-                                                                                augmentation)
+            train_augm = augm.augmentation(x_train,
+                                       train_val_idx,
+                                       extra_train,
+                                       y_train_scaled,
+                                       check_smiles,
+                                       augmentation)
+
+            valid_augm = augm.augmentation(x_valid,
+                                       train_val_idx,
+                                       extra_valid,
+                                       y_valid_scaled,
+                                       check_smiles,
+                                       augmentation)
+            
+            x_train_enum, extra_train_enum, y_train_enum, y_train_clean, x_train_enum_card, _ = train_augm
+            x_valid_enum, extra_valid_enum, y_valid_enum, y_valid_clean, x_valid_enum_card, _ = valid_augm
+            
             # Concatenate multiple SMILES into one via 'j' joint
             if smiles_concat:
                 x_train_enum = utils.smiles_concat(x_train_enum)
