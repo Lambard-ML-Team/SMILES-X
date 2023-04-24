@@ -90,6 +90,7 @@ def augmentation(data_smiles, indices, data_extra=None, data_prop=None, check_sm
         logging.error("Some of the provided SMILES are recognized as incorrect by RDKit.")
         logging.error("The following list of SMILES have been rejected:")
         logging.error(rejected_smiles)
+        logging.error("")
 
     if data_extra is None:
         extra_enum = None
