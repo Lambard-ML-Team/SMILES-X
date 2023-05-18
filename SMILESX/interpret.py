@@ -233,7 +233,7 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
             plt.yticks(fontsize = 20)
             plt.ylabel('Cumulative SMILES path', fontsize = 20, labelpad = 15)
             plt.ylabel('Temporal relative distance', fontsize = 20, labelpad = 15)
-            plt.savefig(save_dir+'Temporal_Relative_Distance_smiles_'+str(i)+'.png', bbox_inches='tight')
+            plt.savefig(save_dir+'/Temporal_Relative_Distance_smiles_'+str(i)+'.png', bbox_inches='tight')
             plt.show()
     
     logging.info("********************************************")
