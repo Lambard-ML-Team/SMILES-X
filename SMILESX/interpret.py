@@ -96,8 +96,6 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
         elif true_err.shape[1] == 2:
             err_format = 'minmax'
             true_err = visutils.error_format(true.reshape(-1,1), true_err, 'minmax').T
-            print(true_err)
-            print(true)
         print_err = True
 
     logging.info("Full vocabulary: {}".format(model.tokens))
@@ -105,11 +103,18 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
     logging.info("Maximum length of tokenized SMILES: {} tokens.\n".format(model.max_length))
     
     # For the moment, no augmentation is implemented
-    smiles_enum, _, _, _ = augm.augmentation(data_smiles=smiles,
-                                             data_extra=None,
-                                             data_prop=None,
-                                             check_smiles=check_smiles,
-                                             augment=False)
+#     smiles_enum, _, _, _ = augm.augmentation(data_smiles=smiles,
+#                                              data_extra=None,
+#                                              data_prop=None,
+#                                              check_smiles=check_smiles,
+#                                              augment=False)
+
+    smiles_enum, _, _, _, _, _ = augm.augmentation(data_smiles=smiles,
+                                                   indices=[i for i in range(len(smiles))],
+                                                   data_extra=None,
+                                                   data_prop=None,
+                                                   check_smiles=check_smiles,
+                                                   augment=False)
 
     # Concatenate multiple SMILES into one via 'j' joint
     if smiles_concat:
@@ -172,8 +177,7 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
         
         # 2D attention map
         mol_tmp = Chem.MolFromSmiles(smiles[i])
-        mol_df_tmp = pd.DataFrame([ismiles, att_map_mean[i].\
-                                   flatten().tolist()[-ismiles_len-1:-1]]).transpose()
+        mol_df_tmp = pd.DataFrame([ismiles, att_map_mean[i].flatten().tolist()[-ismiles_len-1:-1]]).transpose()
         bond = ['-','=','#','$','/','\\','.','(',')']
         mol_df_tmp = mol_df_tmp[~mol_df_tmp.iloc[:,0].isin(bond)]
         mol_df_tmp = mol_df_tmp[[not itoken.isdigit() for itoken in mol_df_tmp.iloc[:,0].values.tolist()]]

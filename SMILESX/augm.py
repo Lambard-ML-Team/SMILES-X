@@ -66,7 +66,7 @@ def augmentation(data_smiles, indices, data_extra=None, data_prop=None, check_sm
             if check_smiles:
                 enumerated_smiles = generate_smiles(ismiles, rotate=False)
             else:
-                enumerated_smiles = [ismiles]
+                enumerated_smiles = [[ismiles]]
         if any(None in s for s in enumerated_smiles):
             rejected_smiles.extend(ismiles)
             indices_to_remove.append(csmiles)

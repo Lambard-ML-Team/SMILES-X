@@ -51,6 +51,7 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
                                                model.data_name,
                                                'Augm' if model.augment else 'Can',
                                                'Augm' if augment else 'Can')
+    
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -82,11 +83,14 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
     if model.extra:
         data_extra = np.array(data_extra)
     # Checking and/or augmenting the SMILES if requested
-    smiles_enum, extra_enum, _, smiles_enum_card = augm.augmentation(data_smiles=data_smiles,
+
+    smiles_enum, extra_enum, _, _, smiles_enum_card, _ = augm.augmentation(data_smiles=data_smiles,
+                                                                     indices=[i for i in range(len(data_smiles))],
                                                                      data_extra=data_extra,
                                                                      data_prop=None,
                                                                      check_smiles=check_smiles,
                                                                      augment=augment)
+
     # Concatenate multiple SMILES into one via 'j' joint
     if smiles_concat:
         smiles_enum = utils.smiles_concat(smiles_enum)
@@ -123,8 +127,11 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
 
     preds_mean, preds_std = utils.mean_result(smiles_enum_card, preds_enum)
 
+    print('data_smiles inference #131')
+    print(data_smiles)
+    print(data_smiles.shape)
     preds = pd.DataFrame()
-    preds['SMILES'] = data_smiles
+    preds['SMILES'] = pd.DataFrame(data_smiles)
     preds['mean'] = preds_mean
     preds['sigma'] = preds_std
     logging.info("")
