@@ -175,7 +175,7 @@ class LSTMAttModel:
                weight = None, 
                model_type = 'regression'):
 
-        smiles_input = Input(shape=(int(input_tokens),), name="smiles") #shape=(input_tokens,)
+        smiles_input = Input(shape=(int(input_tokens),), name="smiles")
 
         # Initialize with constant weights during geometry search
         if geom_search:

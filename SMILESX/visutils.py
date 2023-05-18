@@ -27,11 +27,11 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
     plt.xlabel('Epoch', fontsize=18)
 
     ax = fig.add_subplot(111)
+    
+    ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
 
     ax.plot(train_loss, color='#3783ad')
     ax.plot(val_loss, color='#a3cee6')
-
-    ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
 
     for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(14)
@@ -441,7 +441,8 @@ def error_format(val, err, bars):
         elif err.shape[1]==2:
             # Switch from min/max range to the lengths of error bars
             # to the left/right from the mean or median value
-            return np.abs(val-err).T
+            val = val.reshape(-1,1)
+            return np.abs(err-val).T
         # If three error values are given, they are treated as [std, min, max]
         elif err.shape[1]==3:
             if bars == 'minmax':
