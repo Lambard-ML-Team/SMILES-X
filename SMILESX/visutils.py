@@ -22,14 +22,15 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 
-    plt.title('')
-    plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
-    plt.xlabel('Epoch', fontsize=18)
+#     plt.title('')
 
     ax = fig.add_subplot(111)
-    
+
     ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
 
+    plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
+    plt.xlabel('Epoch', fontsize=18)
+    
     ax.plot(train_loss, color='#3783ad')
     ax.plot(val_loss, color='#a3cee6')
 
