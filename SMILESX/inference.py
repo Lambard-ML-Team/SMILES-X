@@ -127,9 +127,6 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
 
     preds_mean, preds_std = utils.mean_result(smiles_enum_card, preds_enum)
 
-    print('data_smiles inference #131')
-    print(data_smiles)
-    print(data_smiles.shape)
     preds = pd.DataFrame()
     preds['SMILES'] = pd.DataFrame(data_smiles)
     preds['mean'] = preds_mean
