@@ -138,7 +138,6 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
     att_map_mean = np.mean(att_map, axis = 0)
     att_map_std = np.std(att_map, axis = 0)
     
-    print(smiles_enum_tokens)
     for i, ismiles in enumerate(smiles_enum_tokens):
         
         logging.info("*******")
