@@ -175,9 +175,9 @@ def main(data_smiles,
         Whether augmentation was used or not during pretraining. It is used to build the path to the 
         pretrained model. 
         (Default: False)
-    model_type: {'regression', 'classification'}, str 
-        Requests if the SMILES-X architecture should perform a 'regression' or binary 'classification' task. 
-        Basically, the activation function of the last layer will be set to 'linear' or 'sigmoid' respectively.
+    model_type: {'regression', 'binary_classification', 'multiclass_classification'}, str 
+        Requests if the SMILES-X architecture should perform a 'regression', 'binary_classification', or 'multiclass_classification' task. 
+        Basically, the activation function of the last layer will be set to 'linear', 'sigmoid', or 'softmax' respectively.
         (Default: 'regression') 
     scale_output: bool
         Whether to scale the output property values or not. For binary classification tasks, it is recommended not to scale 
@@ -357,6 +357,8 @@ def main(data_smiles,
         for i in range(data_smiles.shape[1]):
             header.extend(["SMILES_{}".format(i+1)])
     data_prop = data_prop.values
+    # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
+    n_class = len(np.unique(data_prop)) if model_type == 'multiclass_classification' else 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
     header.extend([data_label])
     if data_err is not None:
         if data_err.ndim==1:
@@ -396,6 +398,8 @@ def main(data_smiles,
     logging.info("pretrained_data_name = \'{}\'".format(pretrained_data_name))
     logging.info("pretrained_augm = \'{}\'".format(pretrained_augm))
     logging.info("model_type = \'{}\'".format(model_type))
+    if model_type == 'multiclass_classification':
+        logging.info("n_class = {}".format(n_class))
     logging.info("scale_output = \'{}\'".format(scale_output))
     logging.info("geomopt_mode = \'{}\'".format(geomopt_mode))
     logging.info("bayopt_mode = \'{}\'".format(bayopt_mode))
@@ -525,11 +529,14 @@ def main(data_smiles,
         kf_splits = kf.split(X=data_smiles, groups=groups)
         model_loss = 'mse'
         model_metrics = [metrics.mae, metrics.mse]
-    elif model_type == 'classification':
+    else:
         kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True, random_state=42)
         kf.get_n_splits(X=data_smiles, y=data_prop)
         kf_splits = kf.split(X=data_smiles, y=data_prop)
-        model_loss = 'binary_crossentropy'
+        if model_type == 'binary_classification':
+            model_loss = 'binary_crossentropy'
+        elif model_type == 'multiclass_classification':
+            model_loss = 'sparse_categorical_crossentropy'
         model_metrics = ['accuracy']
      
     # Individual counter for the folds of interest in case of k_fold_index
@@ -602,7 +609,7 @@ def main(data_smiles,
         valid_augm = augm.augmentation(x_valid,
                                        train_val_idx,
                                        extra_valid,
-                                       y_valid_scaled,
+            scale_output                           y_valid_scaled,
                                        check_smiles,
                                        augmentation)
 
@@ -746,12 +753,12 @@ def main(data_smiles,
                                         max_length=max_length,
                                         geom_file=geom_file,
                                         strategy=strategy, 
-                                        model_type=model_type)
+                                        model_type='regression') # model_type for regression is by default fitted to the geom_search function
             else:
                 logging.info("Trainless geometry optimisation is not requested.")
-                logging.info("")
+            scale_output    logging.info("")
 
-             # Bayesian optimisation
+             # Bayesian optimisationmodel_type
             if bayopt_mode == 'on':
                 if geomopt_mode == 'on':
                     logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
@@ -778,6 +785,7 @@ def main(data_smiles,
                                               bo_runs=bayopt_n_runs,
                                               strategy=strategy,
                                               model_type=model_type, 
+                                              output_n_nodes=n_class, 
                                               scale_output=scale_output, 
                                               pretrained_model=pretrained_model)
             else:
@@ -854,7 +862,8 @@ def main(data_smiles,
                                                                 lstm_units=hyper_opt["LSTM"],
                                                                 tdense_units=hyper_opt["TD dense"],
                                                                 dense_depth=dense_depth,
-                                                                model_type=model_type)
+                                                                model_type=model_type, 
+                                                                output_n_nodes=n_class)
                         custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
                         model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
                     if (nfold==0 and run==0):
@@ -881,8 +890,7 @@ def main(data_smiles,
                     n_epochs_schedule = [int(n_epochs/3), int(n_epochs/3), n_epochs - 2*int(n_epochs/3)]
 
                     # Fit the model applying the batch size schedule:
-                    n_epochs_done = 0
-                    best_loss = np.Inf
+
                     # Keeping track of history
                     # During BS increments model is trained 3 times, histories should be stitched manually
                     history_train_loss = []

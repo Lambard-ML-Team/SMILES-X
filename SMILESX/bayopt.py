@@ -203,7 +203,8 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
                                                           lstm_units=hyper_bo['LSTM'],
                                                           tdense_units=hyper_bo['TD dense'],
                                                           dense_depth=dense_depth, 
-                                                          model_type=model_type)
+                                                          model_type=model_type, 
+                                                          output_n_nodes=output_n_nodes)
             
             if model_type == 'regression':
                 model_loss = 'mse'
