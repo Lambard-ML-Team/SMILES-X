@@ -155,6 +155,9 @@ class LSTMAttModel:
     model_type: str
         The type of the model. Can be either 'regression' (last_activation = 'linear') or 
         'classification' (last_activation = 'sigmoid'). (Default: 'regression')
+    output_n_nodes: int
+        The number of output nodes. (Default: 1 for regression and binary classification)
+        It equals to n_class (number of possible classes per output label) for multiclass classification.
 
     Returns
     -------
@@ -173,7 +176,8 @@ class LSTMAttModel:
                geom_search=False,
                return_prob=False,
                weight = None, 
-               model_type = 'regression'):
+               model_type = 'regression', 
+               output_n_nodes = 1):
 
         smiles_input = Input(shape=(int(input_tokens),), name="smiles")
 
@@ -230,8 +234,8 @@ class LSTMAttModel:
                 smiles_net = Dense(int(dense_units), activation="relu", kernel_initializer=kernel_initializer)(smiles_net)
 
         # Output layer
-        last_activation = {'regression': 'linear', 'classification': 'sigmoid'}[model_type]
-        smiles_net = Dense(1, activation=last_activation, kernel_initializer=kernel_initializer)(smiles_net)
+        last_activation = {'regression': 'linear', 'binary_classification': 'sigmoid', 'multiclass_classification': 'softmax'}[model_type]
+        smiles_net = Dense(output_n_nodes, activation=last_activation, kernel_initializer=kernel_initializer)(smiles_net)
         if extra_dim is not None:
             model = Model(inputs=[smiles_input, extra_input],
                           outputs=smiles_net)
