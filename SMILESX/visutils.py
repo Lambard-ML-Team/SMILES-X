@@ -11,6 +11,7 @@ from matplotlib.ticker import AutoMinorLocator
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import precision_recall_curve, auc, confusion_matrix
+from sklearn.metrics import classification_report
 
 from SMILESX import utils
 
@@ -18,7 +19,7 @@ from SMILESX import utils
 logger = logging.getLogger()
 
 # Learning curve plotting
-def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: int, run: int) -> None:
+def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: int, run: int, model_type: str) -> None:
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 
@@ -28,7 +29,10 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 
     ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
 
-    plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
+    if model_type == 'regression':
+        plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
+    else:
+        plt.ylabel('Loss (cross-entropy)', fontsize=18)
     plt.xlabel('Epoch', fontsize=18)
     
     ax.plot(train_loss, color='#3783ad')

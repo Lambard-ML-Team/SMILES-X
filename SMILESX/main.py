@@ -1004,7 +1004,7 @@ def main(data_smiles,
                     history_val_loss = history.history['val_loss']
 
                 # Summarize history for losses per epoch
-                visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run)
+                visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
 
                 logging.info("Evaluating performance of the trained model...")
                 logging.info("")
