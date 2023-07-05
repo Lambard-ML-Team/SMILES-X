@@ -232,7 +232,8 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
 
                 outputs.append([rmse, d_rmse, mae, d_mae, r2, d_r2])
         elif model_type.split('_')[1] == 'classification':
-            for i_average in ['micro', 'macro', 'weighted', None]:
+            ## TODO: add classification metrics per class. With label == None, precision, etc are each returned as a list of scores for each class
+            for i_average in ['micro', 'macro', 'weighted'] #, None]:
                 precision, recall, f1_score, support, \
                 precision_prec, recall_prec, f1_score_prec, \
                 roc_auc, prc_auc, \
@@ -251,7 +252,10 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                     logging.info("{0:} avg prc_auc: {1:{2}f}".format(prc_auc, prc_auc_prec))
                     logging.info("")
 
-                    outputs.append([precision, recall, f1_score, roc_auc, prc_auc])
+                    if i_average is 'micro':
+                        outputs.append([precision, recall, f1_score, roc_auc, prc_auc])
+                    else:
+                        outputs[-1].append(precision, recall, f1_score, roc_auc, prc_auc)
                 else:
                     err_pred = np.array(err_pred).ravel()
 
@@ -269,8 +273,11 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                     logging.info("{0:} avg roc_auc: {1:{2}f}+-{2:{2}f}".format(roc_auc, d_roc_auc, roc_auc_prec))
                     logging.info("{0:} avg prc_auc: {1:{2}f}+-{2:{2}f}".format(prc_auc, d_prc_auc, prc_auc_prec))
                     logging.info("")
-
-                    outputs.append([precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc])
+                    
+                    if i_average is 'micro':
+                        outputs.append([precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc])
+                    else:
+                        outputs[-1].append(precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc)
 
     return outputs
 ##

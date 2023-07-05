@@ -1089,7 +1089,9 @@ def main(data_smiles,
                                            preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
                                            errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
                                            prec=prec, 
-                                           model_type=model_type)
+                                           model_type=model_type, 
+                                           labels = unique_classes)        
+        
         scores_folds.append([err for set_name in fold_scores for err in set_name])
 
         # Plot prediction vs observation plots for the fold
@@ -1128,7 +1130,8 @@ def main(data_smiles,
                                                 preds=[predictions['Mean'].values],
                                                 errs_pred=[predictions['Standard deviation'].values],
                                                 prec=prec, 
-                                                model_type=model_type)
+                                                model_type=model_type, 
+                                                labels = unique_classes)
             
             scores_final = [err for set_name in final_scores for err in set_name]
             
@@ -1147,19 +1150,32 @@ def main(data_smiles,
             
             if model_type == 'regression':
                 scores_list = ['RMSE', 'MAE', 'R2-score']
-            elif model_type == 'classification':
-                scores_list = ['Accuracy', 'Precision', 'Recall', 'F1-score', 'PrecisionRecall-AUC']
+            elif model_type.split('_')[1] == 'classification':
+                scores_list = ['Precision', 'Recall', 'F1-score', 'ROC-AUC', 'PRC-AUC']
 
             scores_folds = pd.DataFrame(scores_folds)
-            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                               scores_list,\
-                                                               ['Mean', 'Sigma']])
+            if model_type == 'regression':
+                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+            elif model_type.split('_')[1] == 'classification':
+                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                   ['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+
             scores_folds.index.name = 'Fold'
             scores_folds.to_csv('{}/{}_Scores_Folds.csv'.format(save_dir, data_name))
             
             scores_final = pd.DataFrame(scores_final).T
-            scores_final.columns = pd.MultiIndex.from_product([scores_list,\
-                                                               ['Mean', 'Sigma']])
+            if model_type == 'regression':
+                scores_final.columns = pd.MultiIndex.from_product([scores_list,\
+                                                                ['Mean', 'Sigma']])
+            else:
+                scores_final.columns = pd.MultiIndex.from_product([['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+                                                                   
             scores_final.to_csv('{}/{}_Scores_Final.csv'.format(save_dir, data_name), index=False)
         
         nfold += 1
