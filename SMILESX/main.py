@@ -358,7 +358,8 @@ def main(data_smiles,
             header.extend(["SMILES_{}".format(i+1)])
     data_prop = data_prop.values
     # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
-    n_class = len(np.unique(data_prop)) if model_type == 'multiclass_classification' else 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
+    unique_classes = np.unique(data_prop).tolist()
+    n_class = len(unique_classes) if model_type == 'multiclass_classification' else 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
     header.extend([data_label])
     if data_err is not None:
         if data_err.ndim==1:
@@ -1049,7 +1050,8 @@ def main(data_smiles,
                                  preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
                                  errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
                                  prec=prec, 
-                                 model_type=model_type)
+                                 model_type=model_type, 
+                                 labels = unique_classes)
 
             # Plot prediction vs observation plots per run
             visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
