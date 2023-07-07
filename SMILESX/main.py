@@ -610,7 +610,7 @@ def main(data_smiles,
         valid_augm = augm.augmentation(x_valid,
                                        train_val_idx,
                                        extra_valid,
-            scale_output                           y_valid_scaled,
+                                       y_valid_scaled,
                                        check_smiles,
                                        augmentation)
 
@@ -757,7 +757,7 @@ def main(data_smiles,
                                         model_type='regression') # model_type for regression is by default fitted to the geom_search function
             else:
                 logging.info("Trainless geometry optimisation is not requested.")
-            scale_output    logging.info("")
+                logging.info("")
 
              # Bayesian optimisationmodel_type
             if bayopt_mode == 'on':
@@ -817,9 +817,14 @@ def main(data_smiles,
             logging.info("*** TRAINING ***")
             logging.info("")
         start_train = time.time()
-        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
-        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
-        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
+        if model_type != 'multiclass_classification':
+            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
+            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
+            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
+        else:
+            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
+            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
+            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
         
         for run in range(n_runs):
             start_run = time.time()
@@ -1032,19 +1037,28 @@ def main(data_smiles,
                 y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
                 y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
             else:
-                y_pred_train_unscaled = y_pred_train.ravel()
-                y_pred_valid_unscaled = y_pred_valid.ravel()
-                y_pred_test_unscaled = y_pred_test.ravel()
+                y_pred_train_unscaled = y_pred_train.ravel() if model_type != 'multiclass_classification' else y_pred_train
+                y_pred_valid_unscaled = y_pred_valid.ravel() if model_type != 'multiclass_classification' else y_pred_valid
+                y_pred_test_unscaled = y_pred_test.ravel() if model_type != 'multiclass_classification' else y_pred_test
 
-            prediction_train_bag[:, run] = y_pred_train_unscaled
-            prediction_valid_bag[:, run] = y_pred_valid_unscaled
-            prediction_test_bag[:, run]  = y_pred_test_unscaled
+                y_train_clean_unscaled = y_train_clean.ravel()
+                y_valid_clean_unscaled = y_valid_clean.ravel()
+                y_test_clean_unscaled = y_test_clean.ravel()
+
+            if model_type != 'multiclass_classification':
+                prediction_train_bag[:, run] = y_pred_train_unscaled
+                prediction_valid_bag[:, run] = y_pred_valid_unscaled
+                prediction_test_bag[:, run]  = y_pred_test_unscaled
+            else:
+                prediction_train_bag[:,:, run] = y_pred_train_unscaled
+                prediction_valid_bag[:,:, run] = y_pred_valid_unscaled
+                prediction_test_bag[:,:, run]  = y_pred_test_unscaled
 
             # Compute average per set of augmented SMILES for the plots per run
-            y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled)
-            y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled)
-            y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled)
-            
+            y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled, model_type)
+            y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled, model_type)
+            y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled, model_type)
+
             # Print the stats for the run
             visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                                  preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
@@ -1073,9 +1087,9 @@ def main(data_smiles,
             logging.info("")
 
         # Averaging predictions over augmentations and runs
-        pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag)
-        pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag)
-        pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag)
+        pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag, model_type)
+        pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
+        pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
 
         # Save the predictions to the final table
         predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()

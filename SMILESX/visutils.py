@@ -128,10 +128,17 @@ def classification_metrics(y_true, y_pred, model_type, prec, average=None, label
     precision_prec = output_prec(precision, prec)
     recall_prec = output_prec(recall, prec)
     f1_score_prec = output_prec(f1_score, prec)
-    roc_auc = roc_auc_score(y_true, y_pred, average=average, multi_class='ovr') # ovr -> One-vs-rest: AUC of each class against the rest. Sensitive to class imbalance.
-    prc_auc = average_precision_score(y_true, y_pred, average=average)
-    roc_auc_prec = output_prec(roc_auc, prec)
-    prc_auc_prec = output_prec(prc_auc, prec)
+
+    if model_type == 'multiclass_classification' and average == 'micro':
+        roc_auc = None
+    else:
+        roc_auc = roc_auc_score(y_true, y_pred, average=average, multi_class='ovr', labels=labels) # ovr -> One-vs-rest: AUC of each class against the rest. Sensitive to class imbalance.
+    if model_type == 'binary_classification':
+        prc_auc = average_precision_score(y_true, y_pred, average=average)
+    else:
+        prc_auc = None
+    roc_auc_prec = output_prec(roc_auc, prec) if roc_auc is not None else None
+    prc_auc_prec = output_prec(prc_auc, prec) if prc_auc is not None else None
 
     return precision, recall, f1_score, support, precision_prec, recall_prec, f1_score_prec, roc_auc, prc_auc, roc_auc_prec, prc_auc_prec
 ##
@@ -195,7 +202,7 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
 
     outputs = []
     for true, pred, err_pred in zip(trues, preds, errs_pred):
-        true, pred = np.array(true).ravel(), np.array(pred).ravel()
+        #true, pred = np.array(true).ravel(), np.array(pred).ravel()
 
         if model_type == 'regression':
             rmse = np.sqrt(mean_squared_error(true, pred))
@@ -233,7 +240,7 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                 outputs.append([rmse, d_rmse, mae, d_mae, r2, d_r2])
         elif model_type.split('_')[1] == 'classification':
             ## TODO: add classification metrics per class. With label == None, precision, etc are each returned as a list of scores for each class
-            for i_average in ['micro', 'macro', 'weighted'] #, None]:
+            for i_average in ['micro', 'macro', 'weighted']: #, None]:
                 precision, recall, f1_score, support, \
                 precision_prec, recall_prec, f1_score_prec, \
                 roc_auc, prc_auc, \
@@ -244,12 +251,19 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                                                                     labels = None if i_average is None else labels)
             
                 if err_pred is None:
-                    logging.info("{0:} avg precision: {1:{2}f}".format(precision, precision_prec))
-                    logging.info("{0:} avg recall: {1:{2}f}".format(recall, recall_prec))
-                    logging.info("{0:} avg f1-score: {1:{2}f}".format(f1_score, f1_score_prec))
-                    logging.info("{0:}".format(support))
-                    logging.info("{0:} avg roc_auc: {1:{2}f}".format(roc_auc, roc_auc_prec))
-                    logging.info("{0:} avg prc_auc: {1:{2}f}".format(prc_auc, prc_auc_prec))
+                    logging.info("{0:} avg".format(i_average))
+                    logging.info("precision: {0:{1}f}".format(precision, precision_prec))
+                    logging.info("recall: {0:{1}f}".format(recall, recall_prec))
+                    logging.info("f1-score: {0:{1}f}".format(f1_score, f1_score_prec))
+                    logging.info("support: {0:}".format(support))
+                    if roc_auc is not None:
+                        logging.info("roc_auc: {0:{1}f}".format(roc_auc, roc_auc_prec))
+                    else:
+                        logging.info("roc_auc: {0:}".format(roc_auc))
+                    if prc_auc is not None:
+                        logging.info("prc_auc: {0:{1}f}".format(prc_auc, prc_auc_prec))
+                    else:
+                        logging.info("prc_auc: {0:}".format(prc_auc))
                     logging.info("")
 
                     if i_average is 'micro':
@@ -266,18 +280,27 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                                                         model_type, prec, i_average, 
                                                         labels = None if i_average is None else labels)
 
-                    logging.info("{0:} avg precision: {1:{2}f}+-{2:{2}f}".format(precision, d_precision, precision_prec))
-                    logging.info("{0:} avg recall: {1:{2}f}+-{2:{2}f}".format(recall, d_recall, recall_prec))
-                    logging.info("{0:} avg f1-score: {1:{2}f}+-{2:{2}f}".format(f1_score, d_f1_score, f1_score_prec))
-                    logging.info("{0:}".format(support))
-                    logging.info("{0:} avg roc_auc: {1:{2}f}+-{2:{2}f}".format(roc_auc, d_roc_auc, roc_auc_prec))
-                    logging.info("{0:} avg prc_auc: {1:{2}f}+-{2:{2}f}".format(prc_auc, d_prc_auc, prc_auc_prec))
+                    logging.info("{0:} avg".format(i_average))
+                    logging.info("precision: {0:{2}f}+-{1:{2}f}".format(precision, d_precision, precision_prec))
+                    logging.info("recall: {0:{2}f}+-{1:{2}f}".format(recall, d_recall, recall_prec))
+                    logging.info("f1-score: {0:{2}f}+-{1:{2}f}".format(f1_score, d_f1_score, f1_score_prec))
+                    logging.info("support: {0:}".format(support))
+                    if roc_auc is not None:
+                        logging.info("roc_auc: {0:{2}f}+-{1:{2}f}".format(roc_auc, d_roc_auc, roc_auc_prec))
+                    else:
+                        logging.info("roc_auc: {0:}".format(roc_auc))
+                    if prc_auc is not None:
+                        logging.info("prc_auc: {0:{2}f}+-{1:{2}f}".format(prc_auc, d_prc_auc, prc_auc_prec))
+                    else:
+                        logging.info("prc_auc: {0:}".format(prc_auc))
                     logging.info("")
                     
+                    scores_list = [precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc]
                     if i_average is 'micro':
-                        outputs.append([precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc])
+                        outputs.append(scores_list)
                     else:
-                        outputs[-1].append(precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc)
+                        for iscore in scores_list:
+                            outputs[-1].append(iscore)
 
     return outputs
 ##
@@ -565,7 +588,7 @@ def sigma_classification_metrics(true, pred, err_pred, model_type, prec, average
     N = float(len(err_pred))
     sigma = np.zeros((n_mc, 11))
     for i in range(n_mc):
-        pred_mc = pred + np.random.normal(0, err_pred)
+        pred_mc = pred + np.random.normal(0, err_pred).reshape(pred.shape[0], pred.shape[1])
         sigma[i,:] = classification_metrics(true, pred_mc, model_type, prec, average, labels)
     sigma = np.std(sigma, axis=0)
     return sigma.ravel()
