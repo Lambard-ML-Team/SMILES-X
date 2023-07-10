@@ -327,7 +327,7 @@ def smiles_concat(smiles_list):
     return concat_smiles_list
 ##
 
-def mean_result(smiles_enum_card, preds_enum, model_type):
+def mean_result(smiles_enum_card, preds_enum, model_type = 'regression'):
     """Compute mean and median of predictions
     
     Parameters

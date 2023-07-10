@@ -251,6 +251,7 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                                                                     labels = None if i_average is None else labels)
             
                 if err_pred is None:
+                    logging.info('Model performance metrics for the ' + set_names.pop() + ' set:')
                     logging.info("{0:} avg".format(i_average))
                     logging.info("precision: {0:{1}f}".format(precision, precision_prec))
                     logging.info("recall: {0:{1}f}".format(recall, recall_prec))
@@ -280,6 +281,11 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                                                         model_type, prec, i_average, 
                                                         labels = None if i_average is None else labels)
 
+                    if len(trues)==1:
+                        logging.info("Final cross-validation statistics:")
+                    else:
+                        logging.info("Model performance metrics for the " + set_names.pop() + " set:")
+                    
                     logging.info("{0:} avg".format(i_average))
                     logging.info("precision: {0:{2}f}+-{1:{2}f}".format(precision, d_precision, precision_prec))
                     logging.info("recall: {0:{2}f}+-{1:{2}f}".format(recall, d_recall, recall_prec))
@@ -588,7 +594,7 @@ def sigma_classification_metrics(true, pred, err_pred, model_type, prec, average
     N = float(len(err_pred))
     sigma = np.zeros((n_mc, 11))
     for i in range(n_mc):
-        pred_mc = pred + np.random.normal(0, err_pred).reshape(pred.shape[0], pred.shape[1])
+        pred_mc = pred + np.random.normal(0, err_pred).reshape(pred.shape)
         sigma[i,:] = classification_metrics(true, pred_mc, model_type, prec, average, labels)
     sigma = np.std(sigma, axis=0)
     return sigma.ravel()
