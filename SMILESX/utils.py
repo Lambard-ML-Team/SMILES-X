@@ -347,6 +347,11 @@ def mean_result(smiles_enum_card, preds_enum, model_type = 'regression'):
             Standard deviation over predictions augmentations and models
     """
     
+    if model_type == 'multiclass_classification' and len(preds_enum.shape) == 3:
+        n_tile = preds_enum.shape[2]
+        preds_enum = preds_enum.reshape(preds_enum.shape[0]*preds_enum.shape[2], preds_enum.shape[1])
+        smiles_enum_card = np.tile(smiles_enum_card, n_tile)
+
     preds_ind = pd.DataFrame(preds_enum, index = smiles_enum_card)
     if model_type != 'multiclass_classification':
         preds_mean = preds_ind.groupby(preds_ind.index).apply(lambda x: np.mean(x.values)).values.flatten()

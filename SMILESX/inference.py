@@ -74,7 +74,12 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
         logging.error("")
         logging.error("*** INFERENCE ABORTED ***")
         raise utils.StopExecution
-        
+    
+    model_type = model.model_type
+    n_class = model.n_class
+    logging.info("model_type = \'{}\'".format(model_type))
+    if model_type == 'multiclass_classification':
+        logging.info("n_class = {}".format(n_class))
     logging.info("Full vocabulary: {}".format(model.tokens))
     logging.info("Vocabulary size: {}".format(len(model.tokens)))
     logging.info("Maximum length of tokenized SMILES: {} tokens.\n".format(model.max_length))
@@ -103,7 +108,7 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
                                                        max_length=model.max_length,
                                                        vocab=model.tokens)
     # Model ensembling
-    preds_enum = np.empty((len(smiles_enum), model.k_fold_number*model.n_runs), dtype='float')
+    #preds_enum = np.empty((len(smiles_enum), model.k_fold_number*model.n_runs), dtype='float')
     for ifold in range(model.k_fold_number):
         # Scale additional data if provided
         if model.extra:
@@ -123,13 +128,27 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
             else:
                 ipred_unscaled = ipred
             # Store predictions in an array
+            if ifold == 0 and run == 0:
+                if model_type == 'multiclass_classification':
+                    preds_enum = np.empty((len(smiles_enum)*n_class, model.k_fold_number*model.n_runs), dtype='float')
+                else:
+                    preds_enum = np.empty((len(smiles_enum), model.k_fold_number*model.n_runs), dtype='float')
+            
             preds_enum[:, ifold * model.n_runs + run] = ipred_unscaled.flatten()
 
-    preds_mean, preds_std = utils.mean_result(smiles_enum_card, preds_enum)
+    if model_type == 'multiclass_classification':
+        preds_enum = preds_enum.reshape(len(smiles_enum), n_class, model.k_fold_number*model.n_runs)  
+    preds_mean, preds_std = utils.mean_result(smiles_enum_card, preds_enum, model_type)
+
+    if model_type == 'multiclass_classification':
+        preds_mean = np.argmax(preds_mean, axis=1)
+        preds_std = np.max(preds_std, axis=1)
 
     preds = pd.DataFrame()
     preds['SMILES'] = pd.DataFrame(data_smiles)
     preds['mean'] = preds_mean
+    if model_type == 'binary_classification':
+        preds['mean'] = (preds['mean'] > 0.5).astype("int8")
     preds['sigma'] = preds_std
     logging.info("")
     logging.info("Prediction results:\n" \

@@ -82,7 +82,7 @@ def classification_metrics(y_true, y_pred, model_type, prec, average=None, label
     y_pred: list
         List of predicted values.
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'. (Default: 'regression')
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
     prec: int
         Printing precision. (Default: 4)
     average: str, optional
@@ -121,7 +121,10 @@ def classification_metrics(y_true, y_pred, model_type, prec, average=None, label
     if model_type == 'binary_classification':
         y_pred_class = (y_pred > 0.5).astype("int8")
     elif model_type == 'multiclass_classification':
-        y_pred_class = np.argmax(y_pred, axis=1)
+        if len(y_pred.shape) == 2:
+            y_pred_class = np.argmax(y_pred, axis=1).astype("int32")
+        else:
+            y_pred_class = y_pred.astype("int32")
 
     # classification report
     precision, recall, f1_score, support = precision_recall_fscore_support(y_true, y_pred_class, average=average, labels=labels)
@@ -129,7 +132,7 @@ def classification_metrics(y_true, y_pred, model_type, prec, average=None, label
     recall_prec = output_prec(recall, prec)
     f1_score_prec = output_prec(f1_score, prec)
 
-    if model_type == 'multiclass_classification' and average == 'micro':
+    if model_type == 'multiclass_classification': # and average == 'micro':
         roc_auc = None
     else:
         roc_auc = roc_auc_score(y_true, y_pred, average=average, multi_class='ovr', labels=labels) # ovr -> One-vs-rest: AUC of each class against the rest. Sensitive to class imbalance.
@@ -158,7 +161,7 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
     prec: int
         Printing precision. (Default: 4)
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'. (Default: 'regression')
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
     labels: list, optional
         List of labels for classification tasks. (Default: None)
 
@@ -240,6 +243,15 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                 outputs.append([rmse, d_rmse, mae, d_mae, r2, d_r2])
         elif model_type.split('_')[1] == 'classification':
             ## TODO: add classification metrics per class. With label == None, precision, etc are each returned as a list of scores for each class
+            
+            if err_pred is None:
+                logging.info('Model performance metrics for the ' + set_names.pop() + ' set:')
+            else:
+                if len(trues)==1:
+                    logging.info("Final cross-validation statistics:")
+                else:
+                    logging.info("Model performance metrics for the " + set_names.pop() + " set:")
+
             for i_average in ['micro', 'macro', 'weighted']: #, None]:
                 precision, recall, f1_score, support, \
                 precision_prec, recall_prec, f1_score_prec, \
@@ -251,7 +263,6 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                                                                     labels = None if i_average is None else labels)
             
                 if err_pred is None:
-                    logging.info('Model performance metrics for the ' + set_names.pop() + ' set:')
                     logging.info("{0:} avg".format(i_average))
                     logging.info("precision: {0:{1}f}".format(precision, precision_prec))
                     logging.info("recall: {0:{1}f}".format(recall, recall_prec))
@@ -280,11 +291,6 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                     _, _ = sigma_classification_metrics(true, pred, err_pred, 
                                                         model_type, prec, i_average, 
                                                         labels = None if i_average is None else labels)
-
-                    if len(trues)==1:
-                        logging.info("Final cross-validation statistics:")
-                    else:
-                        logging.info("Model performance metrics for the " + set_names.pop() + " set:")
                     
                     logging.info("{0:} avg".format(i_average))
                     logging.info("precision: {0:{2}f}+-{1:{2}f}".format(precision, d_precision, precision_prec))
@@ -361,7 +367,7 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
     final: bool
         Whether the plot is built for the final out-of-sample predictions.
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'. (Default: 'regression')
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
     """
 
     set_names = ['Test', 'Validation', 'Train']
@@ -465,13 +471,16 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
         
         #TODO(Guillaume): Account for errors when plotting
         for true, pred, err_pred in zip(trues, preds, errs_pred):
-            true, pred = np.array(true).ravel(), np.array(pred).ravel()
+            #true, pred = np.array(true).ravel(), np.array(pred).ravel()
 
             # Extract the predicted class
             if model_type == 'binary_classification':
                 pred_class = (pred > 0.5).astype("int8")
             elif model_type == 'multiclass_classification':
-                pred_class = np.argmax(pred, axis=1)
+                if len(pred.shape) == 2:
+                    pred_class = np.argmax(pred, axis=1).astype("int32")
+                else:
+                    pred_class = pred.astype("int32")
 
             # Legend printing for train/val/test
             if final:

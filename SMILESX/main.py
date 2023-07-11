@@ -175,8 +175,8 @@ def main(data_smiles,
         Whether augmentation was used or not during pretraining. It is used to build the path to the 
         pretrained model. 
         (Default: False)
-    model_type: {'regression', 'binary_classification', 'multiclass_classification'}, str 
-        Requests if the SMILES-X architecture should perform a 'regression', 'binary_classification', or 'multiclass_classification' task. 
+    model_type: {'regression', 'classification'}, str 
+        Requests if the SMILES-X architecture should perform a regression, binary classification, or multiclass classification task.  
         Basically, the activation function of the last layer will be set to 'linear', 'sigmoid', or 'softmax' respectively.
         (Default: 'regression') 
     scale_output: bool
@@ -357,9 +357,24 @@ def main(data_smiles,
         for i in range(data_smiles.shape[1]):
             header.extend(["SMILES_{}".format(i+1)])
     data_prop = data_prop.values
+
     # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
     unique_classes = np.unique(data_prop).tolist()
-    n_class = len(unique_classes) if model_type == 'multiclass_classification' else 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
+    if model_type == 'classification':
+        n_class = len(unique_classes) 
+        if n_class == 2:
+            model_type = 'binary_classification'
+        elif n_class > 2:
+            model_type = 'multiclass_classification' 
+    else:
+        n_class = 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
+
+    # save model_type and n_class to a file
+    with open(save_dir + '/Other/'+ data_name +'_model_type.txt', 'w') as f:
+        f.write(model_type)
+        f.write('\n')
+        f.write(str(n_class))
+
     header.extend([data_label])
     if data_err is not None:
         if data_err.ndim==1:
@@ -1091,9 +1106,13 @@ def main(data_smiles,
         pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
         pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
 
-        # Save the predictions to the final table
-        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
-        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
+        #Save the predictions to the final table
+        if model_type == 'multiclass_classification':
+            predictions.loc[test_idx_clean, 'Mean'] = np.argmax(pred_test_mean, axis=1).ravel()
+            predictions.loc[test_idx_clean, 'Standard deviation'] = np.max(pred_test_sigma, axis=1).ravel()
+        else:
+            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
+            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
         predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
         
         logging.info("Fold {}, overall performance:".format(ifold))
@@ -1139,6 +1158,7 @@ def main(data_smiles,
             data_prop_clean = data_prop[predictions['Mean'].notna()]
             predictions = predictions.dropna()
 
+            print(predictions['Mean'].values)
             # Print the stats for the whole data
             final_scores = visutils.print_stats(trues=[data_prop_clean],
                                                 preds=[predictions['Mean'].values],

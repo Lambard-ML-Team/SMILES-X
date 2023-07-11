@@ -243,7 +243,7 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
             # Skip the first half of epochs during evaluation
             # Ignore the noisy burn-in period of training
             best_epoch = np.argmin(history.history['val_loss'][int(bo_epochs//2):])
-            score_valid = history.history[hist_val_name][best_epoch]
+            score_valid = history.history[hist_val_name][int(bo_epochs//2)+best_epoch]
 
             if math.isnan(score_valid): # treat diverging architectures (rare event)
                 score_valid = math.inf
@@ -252,10 +252,7 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
         logging.info('Average best validation score: {0:0.4f}'.format(np.mean(score_valids)))
 
         # Return the mean of the validation scores
-        # Negate the score if it is a classification task for the GpyOpt minimizer
         score_valids_mean = np.mean(score_valids)
-        if model_type != 'regression':
-            score_valids_mean = -score_valids_mean
 
         return score_valids_mean
 

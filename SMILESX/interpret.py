@@ -22,7 +22,7 @@ from tensorflow.keras import backend as K
 
 from SMILESX import utils, token, augm, visutils, inference
 
-def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: bool = True, check_smiles: bool = True, smiles_concat: bool = False, font_size: int = 15, font_rotation: str = 'horizontal'):
+def interpret(model, model_type, smiles, true=None, true_err=None, pred=None, log_verbose: bool = True, check_smiles: bool = True, smiles_concat: bool = False, font_size: int = 15, font_rotation: str = 'horizontal'):
     """Inference based on ensemble of trained SMILESX models
 
     Prediction of the property based on the ensemble of SMILESX models.
@@ -32,6 +32,8 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
     ----------
     model: list
         The list of models to be used for inference
+    model_type: str
+        The type of the model to be used for inference: 'regression', 'binary_classification', or 'multiclass_classification'.
     smiles: list(str)
         The list of SMILES to be characterized
     log_verbose: bool
@@ -208,6 +210,7 @@ def interpret(model, smiles, true=None, true_err=None, pred=None, log_verbose: b
                 subsmiles_list.append(fragment)
             # Predict property for subsmiles
             ipreds = inference.infer(model=model,
+                                     model_type=model_type,
                                      data_smiles=subsmiles_list,
                                      data_extra=None,
                                      augment=False,
