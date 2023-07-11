@@ -520,6 +520,7 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
                 fscore = (2 * prp_precision * prp_recall) / (prp_precision + prp_recall)
                 # locate the index of the largest f score
                 best_fscore_idx = np.argmax(fscore)
+                logging.info("{} set:".format(set_names.pop()))
                 logging.info("Precision-Recall curve best threshold = {0:0.4f}, F1 = {1:0.4f}\n".format(prp_th[best_fscore_idx], fscore[best_fscore_idx]))
                 
                 random_perf = len(true[true==1]) / len(true)
