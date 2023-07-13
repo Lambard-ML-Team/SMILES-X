@@ -1108,8 +1108,9 @@ def main(data_smiles,
 
         #Save the predictions to the final table
         if model_type == 'multiclass_classification':
-            predictions.loc[test_idx_clean, 'Mean'] = np.argmax(pred_test_mean, axis=1).ravel()
-            predictions.loc[test_idx_clean, 'Standard deviation'] = np.max(pred_test_sigma, axis=1).ravel()
+            pred_test_mean_argmax = np.argmax(pred_test_mean, axis=1).ravel()
+            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean_argmax
+            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma[np.arange(len(pred_test_sigma)), pred_test_mean_argmax.tolist()].ravel()
         else:
             predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
             predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()

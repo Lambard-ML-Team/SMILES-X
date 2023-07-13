@@ -142,7 +142,7 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
 
     if model_type == 'multiclass_classification':
         preds_mean = np.argmax(preds_mean, axis=1)
-        preds_std = np.max(preds_std, axis=1)
+        preds_std = preds_std[np.arange(len(preds_std)), preds_mean.tolist()]
 
     preds = pd.DataFrame()
     preds['SMILES'] = pd.DataFrame(data_smiles)
