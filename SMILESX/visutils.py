@@ -210,6 +210,7 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
         #true, pred = np.array(true).ravel(), np.array(pred).ravel()
 
         if model_type == 'regression':
+            true, pred = np.array(true).ravel(), np.array(pred).ravel()
             rmse = np.sqrt(mean_squared_error(true, pred))
             mae = mean_absolute_error(true, pred)
             r2 = r2_score(true, pred)
@@ -473,7 +474,8 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
         
         #TODO(Guillaume): Account for errors when plotting
         for true, pred, err_pred in zip(trues, preds, errs_pred):
-            #true, pred = np.array(true).ravel(), np.array(pred).ravel()
+            if model_type == 'regression':
+                true, pred = np.array(true).ravel(), np.array(pred).ravel()
 
             # Extract the predicted class
             if model_type == 'binary_classification':
