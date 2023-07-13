@@ -165,7 +165,7 @@ def geom_search(data_token, data_extra, subsample_size, hyper_bounds, hyper_opt,
                                         max_length,
                                         strategy, 
                                         model_type)
-            print([score, nparams] + list(geom))
+            # print([score, nparams] + list(geom))
             scores.append([score, nparams] + list(geom))
 
     scores = pd.DataFrame(scores)

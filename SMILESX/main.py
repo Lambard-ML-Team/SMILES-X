@@ -364,10 +364,11 @@ def main(data_smiles,
         n_class = len(unique_classes) 
         if n_class == 2:
             model_type = 'binary_classification'
+            n_class = 1 # for binary_classification tasks with a sigmoid activation function at the output layer, output_n_nodes = n_class = 1
         elif n_class > 2:
             model_type = 'multiclass_classification' 
     else:
-        n_class = 1 # for regression and binary_classification tasks, output_n_nodes = n_class = 1
+        n_class = 1 # for regression tasks with a linear activation function at the output layer, output_n_nodes = n_class = 1
 
     # save model_type and n_class to a file
     with open(save_dir + '/Other/'+ data_name +'_model_type.txt', 'w') as f:
