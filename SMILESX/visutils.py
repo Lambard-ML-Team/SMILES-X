@@ -128,6 +128,8 @@ def classification_metrics(y_true, y_pred, model_type, prec, average=None, label
 
     # classification report
     precision, recall, f1_score, support = precision_recall_fscore_support(y_true, y_pred_class, average=average, labels=labels)
+    # replace nan values with 0 in case (precision + recall) = 0
+    f1_score = np.nan_to_num(f1_score)
     precision_prec = output_prec(precision, prec)
     recall_prec = output_prec(recall, prec)
     f1_score_prec = output_prec(f1_score, prec)
@@ -518,9 +520,11 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
                 prp_precision, prp_recall, prp_th = precision_recall_curve(true, pred)
                 # calculate f score
                 fscore = (2 * prp_precision * prp_recall) / (prp_precision + prp_recall)
+                # replace nan values with 0 in case (prp_precision + prp_recall) = 0
+                fscore[np.isnan(fscore)] = 0
                 # locate the index of the largest f score
                 best_fscore_idx = np.argmax(fscore)
-                logging.info("{} set:".format(set_names.pop()))
+                logging.info("{} set:".format(set_name))
                 logging.info("Precision-Recall curve best threshold = {0:0.4f}, F1 = {1:0.4f}\n".format(prp_th[best_fscore_idx], fscore[best_fscore_idx]))
                 
                 random_perf = len(true[true==1]) / len(true)
