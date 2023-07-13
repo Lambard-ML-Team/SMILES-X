@@ -327,7 +327,7 @@ def smiles_concat(smiles_list):
     return concat_smiles_list
 ##
 
-def mean_result(smiles_enum_card, preds_enum):
+def mean_result(smiles_enum_card, preds_enum, model_type = 'regression'):
     """Compute mean and median of predictions
     
     Parameters
@@ -336,6 +336,8 @@ def mean_result(smiles_enum_card, preds_enum):
         List of indices that are the same for the augmented SMILES originating from the same original SMILES
     preds_enum: np.array
         Predictions for every augmented SMILES for every predictive model
+    model_type: str
+        Type of the predictive model ('regression', 'binary_classification', 'multiclass_classification')
 
     Returns
     -------
@@ -345,9 +347,20 @@ def mean_result(smiles_enum_card, preds_enum):
             Standard deviation over predictions augmentations and models
     """
     
+    if model_type == 'multiclass_classification' and len(preds_enum.shape) == 3:
+        n_tile = preds_enum.shape[2]
+        preds_enum = preds_enum.reshape(preds_enum.shape[0]*preds_enum.shape[2], preds_enum.shape[1])
+        smiles_enum_card = np.tile(smiles_enum_card, n_tile)
+
     preds_ind = pd.DataFrame(preds_enum, index = smiles_enum_card)
-    preds_mean = preds_ind.groupby(preds_ind.index).apply(lambda x: np.mean(x.values)).values.flatten()
-    preds_std = preds_ind.groupby(preds_ind.index).apply(lambda x: np.std(x.values)).values.flatten()
+    if model_type != 'multiclass_classification':
+        preds_mean = preds_ind.groupby(preds_ind.index).apply(lambda x: np.mean(x.values)).values.flatten()
+        preds_std = preds_ind.groupby(preds_ind.index).apply(lambda x: np.std(x.values)).values.flatten()
+    else:
+        preds_mean = preds_ind.groupby(preds_ind.index).apply(lambda x: np.mean(x.values, axis=0)).values.flatten()
+        preds_std = preds_ind.groupby(preds_ind.index).apply(lambda x: np.std(x.values, axis=0)).values.flatten()
+        preds_mean = np.stack(preds_mean)
+        preds_std = np.stack(preds_std)
 
     return preds_mean, preds_std
 ##

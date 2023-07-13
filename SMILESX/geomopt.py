@@ -125,23 +125,33 @@ def geom_search(data_token, data_extra, subsample_size, hyper_bounds, hyper_opt,
         return hyper_opt, hyper_bounds
     else:
         scores = []
-        weights = []
-        # Estimate optimal weights by looking at 30 random architectures
-        for n in range(20):
-            geom = [random.choice(g) for g in geom_bounds.values()]
-            best_weights = geom_prescore(data,
-                                         extra,
-                                         geom,
-                                         extra_dim,
-                                         dense_depth,
-                                         vocab_size,
-                                         max_length,
-                                         strategy, 
-                                         model_type)
-            weights.append(best_weights)
-
-        overall_weights = pd.DataFrame([i for line in weights for i in line])
-        weight_range = overall_weights.stack().value_counts().index.tolist()[1:6]
+        best_weights = geom_prescore(data,
+                                     extra,
+                                     geom_bounds,
+                                     extra_dim,
+                                     dense_depth,
+                                     vocab_size,
+                                     max_length,
+                                     strategy,
+                                     model_type
+                                    )
+#         best_weights = [1e-05, 0.1]
+#         # Estimate optimal weights by looking at 30 random architectures
+#         for n in range(20):
+#             geom = [random.choice(g) for g in geom_bounds.values()]
+#             best_weights = geom_prescore(data,
+#                                          extra,
+#                                          geom,
+#                                          extra_dim,
+#                                          dense_depth,
+#                                          vocab_size,
+#                                          max_length,
+#                                          strategy, 
+#                                          model_type)
+#             weights.append(best_weights)
+# 
+#         overall_weights = pd.DataFrame([i for line in weights for i in line])
+#         weight_range = overall_weights.stack().value_counts().index.tolist()[1:6]
 
         # Extensively score all the available architectures
         for geom in itertools.product(*geom_bounds.values()):
@@ -150,11 +160,12 @@ def geom_search(data_token, data_extra, subsample_size, hyper_bounds, hyper_opt,
                                         geom,
                                         extra_dim,
                                         dense_depth,
-                                        weight_range,
+                                        best_weights,
                                         vocab_size,
                                         max_length,
                                         strategy, 
                                         model_type)
+            # print([score, nparams] + list(geom))
             scores.append([score, nparams] + list(geom))
 
     scores = pd.DataFrame(scores)
@@ -175,6 +186,77 @@ def geom_search(data_token, data_extra, subsample_size, hyper_bounds, hyper_opt,
 
     return hyper_opt, hyper_bounds
 ##
+
+# def geom_prescore(data, extra, geom, extra_dim, dense_depth, vocab_size, max_length, strategy, model_type):
+#     """Find the optimal weights for the trainless geometry search
+    
+#     Several architectures are randomly selected among all the possible combinations
+#     and initialized with extensive range of weights. The least correlated weights are
+#     selected for each architecture.
+    
+#     Parameters
+#     ----------
+#     data:
+#         List of tokenized SMILES (training set data are passed from the main.py).
+#     extra: numpy.array, optional
+#         2D array with additional numeric data.
+#     geom: list
+#         List of values for embedding, LSTM and time-distributed dense sizes,
+#         defining a single geometry to be tested.
+#     extra_dim: int
+#         Dimensionality of the additional input data.
+#     dense_depth: int
+#         The number of additional dense layers added after attention to deepen the network.
+#         Can be used with and without `data_extra` data.
+#     vocab_size: int
+#         The size of the vocabulary.
+#     max_length: int
+#         Maximum SMILES length within the data.
+#     strategy:
+#         GPU strategy to be used.
+#     model_type: str
+#         Type of the model to be used. Can be either 'regression' or 'classification'.
+        
+#     Returns
+#     -------
+#     best_weights: list
+#         List of the least correlated weight for the requested geometry
+#     """
+    
+#     embed_units, lstm_units, tdense_units = geom
+
+#     # Test range
+#     weight_range = [i*10**j for j in range(-6,6) for i in [1,3,6]]
+#     best_weights = []
+#     ranks = []
+#     for weight in weight_range:
+#         K.clear_session()
+#         model_geom = model.LSTMAttModel.create(input_tokens=max_length + 1,
+#                                                extra_dim=extra_dim,
+#                                                vocab_size=vocab_size,
+#                                                embed_units=embed_units,
+#                                                lstm_units=lstm_units,
+#                                                tdense_units=tdense_units,
+#                                                dense_depth=dense_depth,
+#                                                geom_search=True,
+#                                                weight=weight, 
+#                                                model_type=model_type)
+#         if extra is not None:
+#             pred = model_geom.predict({"smiles": data, "extra": extra}, verbose=0)
+#         else:
+#             pred = model_geom.predict({"smiles": data}, verbose=0)
+#         rank = np.argsort(pred.flatten())
+#         ranks.append(rank)
+
+#     ranks = np.array(ranks)
+#     corr_ranks = stats.spearmanr(ranks, axis=1)[0]
+#     corr_ranks_triu = np.triu(corr_ranks, k=1)
+#     to_keep = np.sort(np.argsort(np.max(corr_ranks_triu, axis=1))[:6])
+#     weight_range_tmp = [weight_range[j] for j in to_keep]
+#     best_weights.append(weight_range_tmp)
+
+#     return best_weights
+# ##
 
 def geom_prescore(data, extra, geom, extra_dim, dense_depth, vocab_size, max_length, strategy, model_type):
     """Find the optimal weights for the trainless geometry search
@@ -204,50 +286,72 @@ def geom_prescore(data, extra, geom, extra_dim, dense_depth, vocab_size, max_len
     strategy:
         GPU strategy to be used.
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'.
+        The type of the model to be used. Can be either 'regression' or 'classification'.
         
     Returns
     -------
     best_weights: list
         List of the least correlated weight for the requested geometry
     """
-    
-    embed_units, lstm_units, tdense_units = geom
 
-    # Test range
-    weight_range = [i*10**j for j in range(-6,6) for i in [1,3,6]]
-    best_weights = []
-    ranks = []
-    for weight in weight_range:
-        K.clear_session()
-        model_geom = model.LSTMAttModel.create(input_tokens=max_length + 1,
-                                               extra_dim=extra_dim,
-                                               vocab_size=vocab_size,
-                                               embed_units=embed_units,
-                                               lstm_units=lstm_units,
-                                               tdense_units=tdense_units,
-                                               dense_depth=dense_depth,
-                                               geom_search=True,
-                                               weight=weight, 
-                                               model_type=model_type)
-        if extra is not None:
-            pred = model_geom.predict({"smiles": data, "extra": extra}, verbose=0)
-        else:
-            pred = model_geom.predict({"smiles": data}, verbose=0)
-        rank = np.argsort(pred.flatten())
-        ranks.append(rank)
+    LOW = -5
+    HIGH = 0
+    window_size = HIGH-LOW
 
-    ranks = np.array(ranks)
-    corr_ranks = stats.spearmanr(ranks, axis=1)[0]
-    corr_ranks_triu = np.triu(corr_ranks, k=1)
-    to_keep = np.sort(np.argsort(np.max(corr_ranks_triu, axis=1))[:6])
-    weight_range_tmp = [weight_range[j] for j in to_keep]
-    best_weights.append(weight_range_tmp)
+    while window_size != 0:
+        efficiencies = []
+        for w in range(LOW, HIGH+1-window_size):
+            weights = [10**w, 10**(w+window_size)]
+            scores = []
+            # Keep the same random set of architectures across tested weights
+            np.random.seed(21)
+            for it in range(100):
+                # Pick up a random set of architectures, keep it same for all weights
+                embed_units, lstm_units, tdense_units = [random.choice(g) for g in geom.values()]
+                preds = []
+                for weight in weights:
+                    K.clear_session()
+                    model_geom = model.LSTMAttModel.create(input_tokens=max_length + 1,
+                                                           extra_dim=extra_dim,
+                                                           vocab_size=vocab_size,
+                                                           embed_units=embed_units,
+                                                           lstm_units=lstm_units,
+                                                           tdense_units=tdense_units,
+                                                           dense_depth=dense_depth,
+                                                           geom_search=True,
+                                                           weight=weight,
+                                                           model_type=model_type)
 
-    return best_weights
+                    if extra is not None:
+                        pred = model_geom.predict({"smiles": data, "extra": extra}, verbose=0)
+                    else:
+                        pred = model_geom.predict({"smiles": data}, verbose=0)
+                    pred = pred.flatten()
+                    pred_norm = (pred - np.nanmin(pred)) / (np.nanmax(pred) - np.nanmin(pred))
+                    preds.append(pred_norm)
+                    
+                preds = np.array(preds)
+                preds[np.where(preds==0)] = np.nan
+                mae = np.nanmean(np.abs(preds[0,:]-preds[1,:]))
+                mean = np.nanmean(preds)
+                score = mae/mean
+                
+                scores.append(score)
+            # Verify how many architectures got NaN scores
+            print(weights, np.sum(np.isnan(scores))/len(scores))
+            if np.sum(np.isnan(scores))/len(scores) < 0.1:
+                return weights
+        window_size -= 1
+
+#             efficiencies.append((weights, np.sum(np.isnan(scores))/len(scores)))
+#         efficiencies = sorted(efficiencies, key=lambda i:i[1])
+#         if efficiencies[0][1]<0.5:
+#             print("Final weights: ", efficiencies[0][0])
+#             return efficiencies[0][0]
+#         window_size -= 1
 ##
 
-def geom_score(data, extra, geom, extra_dim, dense_depth, weight_range, vocab_size, max_length, strategy, model_type):
+def geom_score(data, extra, geom, extra_dim, dense_depth, weights, vocab_size, max_length, strategy, model_type):
     """Find the optimal weights for the trainless geometry search
     
     Several architectures are randomly selected among all the possible combinations
@@ -268,7 +372,7 @@ def geom_score(data, extra, geom, extra_dim, dense_depth, weight_range, vocab_si
     dense_depth: int
         The number of additional dense layers added after attention to deepen the network.
         Can be used with and without `data_extra` data.
-    weight_range: list
+    weight: list
         List of weights to be used for constant shared weight initialization.
     vocab_size: int
         The size of the vocabulary.
@@ -291,7 +395,7 @@ def geom_score(data, extra, geom, extra_dim, dense_depth, weight_range, vocab_si
 
     # Working range
     preds = []
-    for weight in weight_range:
+    for weight in weights:
         K.clear_session()
         with strategy.scope():
             model_geom = model.LSTMAttModel.create(input_tokens=max_length + 1,
@@ -308,15 +412,23 @@ def geom_score(data, extra, geom, extra_dim, dense_depth, weight_range, vocab_si
                 pred = model_geom.predict({"smiles": data, "extra": extra}, verbose=0)
             else:
                 pred = model_geom.predict({"smiles": data}, verbose=0)
-            pred_norm = (pred - np.min(pred))/(np.max(pred) - np.min(pred))
+            pred_min = np.nanmin(pred)
+            pred_max = np.nanmax(pred)
+            pred_norm = (pred - pred_min)/(pred_max - pred_min)
             preds.append(pred_norm)
 
     preds = np.array(preds)
-    mean_batch = np.mean(preds, axis=1)
-    std_batch = np.std(preds, axis=1)
+        # Compute the score
+#     preds = np.array(preds)
+    preds[np.where(preds==0.)] = np.nan
+    mae = np.abs(preds[0,:]-preds[1,:])
+    score = np.nanmean(mae)/np.nanmean(preds)
+    
+#     mean_batch = np.mean(preds, axis=1)
+#     std_batch = np.std(preds, axis=1)
 
-    # CV(CV)
-    score = np.std(std_batch/mean_batch) / np.mean(std_batch/mean_batch)
+#     # CV(CV)
+#     score = np.std(std_batch/mean_batch) / np.mean(std_batch/mean_batch)
     nparams = model_geom.count_params()
 
     return score, nparams

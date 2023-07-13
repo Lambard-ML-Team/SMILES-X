@@ -124,7 +124,12 @@ class LoadModel:
             raise utils.StopExecution
         else:
             self.vocab_file = vocab_file
-            
+        
+        # Load the model_type and the n_class
+        with open('{}/Other/{}_model_type.txt'.format(self.train_dir, self.data_name), 'r') as f:
+            self.model_type = f.readline().strip()
+            self.n_class = int(f.readline().strip())
+        
         scaler_dir = self.train_dir + '/Other/Scalers'
         model_dir = self.train_dir + '/Models'
         

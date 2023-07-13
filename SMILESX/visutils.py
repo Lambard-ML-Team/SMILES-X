@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import precision_recall_curve, auc, confusion_matrix
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 from SMILESX import utils
 
@@ -18,7 +19,7 @@ from SMILESX import utils
 logger = logging.getLogger()
 
 # Learning curve plotting
-def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: int, run: int) -> None:
+def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: int, run: int, model_type: str) -> None:
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 
@@ -28,7 +29,10 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 
     ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
 
-    plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
+    if model_type == 'regression':
+        plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
+    else:
+        plt.ylabel('Loss (cross-entropy)', fontsize=18)
     plt.xlabel('Epoch', fontsize=18)
     
     ax.plot(train_loss, color='#3783ad')
@@ -67,29 +71,84 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 ##
 
 ## Compute diverse scores to quantify model's performance on classification tasks
-def classification_metrics(y_true, y_pred):
+def classification_metrics(y_true, y_pred, model_type, prec, average=None, labels=None):
+    """Computes precision, recall, F1, support, ROC AUC and PR AUC scores for
+    classification tasks.
 
-    # Compute the average class predictions for binary classification
-    y_pred_class = (y_pred > 0.5).astype("int8")
+    Parameters
+    ----------
+    y_true: list
+        List of true values.
+    y_pred: list
+        List of predicted values.
+    model_type: str
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
+    prec: int
+        Printing precision. (Default: 4)
+    average: str, optional
+        Type of averaging performed on the data. If None, no averaging is
+        performed. (Default: None)
+    labels: list, optional
+        List of labels for classification tasks. (Default: None)
 
-    # accuracy: (tp + tn) / (p + n)
-    accuracy = accuracy_score(y_true, y_pred_class)
-    # precision tp / (tp + fp)
-    precision = precision_score(y_true, y_pred_class)
-    # recall: tp / (tp + fn)
-    recall = recall_score(y_true, y_pred_class)
-    # f1: 2 tp / (2 tp + fp + fn)
-    f1 = f1_score(y_true, y_pred_class)
-    # AUC
-    prp_precision, prp_recall, _ = precision_recall_curve(y_true, y_pred)
-    prp_auc = auc(prp_recall, prp_precision)
-    # confusion matrix
-    conf_mat = confusion_matrix(y_true, y_pred_class)
-    
-    return accuracy, precision, recall, f1, prp_auc, conf_mat
+    Returns
+    -------
+    precision: float
+        Precision score.
+    recall: float
+        Recall score.
+    f1_score: float
+        F1 score.
+    support: int
+        Support.
+    precision_prec: float
+        Precision score with printing precision.
+    recall_prec: float 
+        Recall score with printing precision.
+    f1_score_prec: float
+        F1 score with printing precision.
+    roc_auc: float
+        ROC AUC score.
+    prc_auc: float
+        PR AUC score.
+    roc_auc_prec: float
+        ROC AUC score with printing precision.
+    prc_auc_prec: float
+        PR AUC score with printing precision.
+    """
+
+    # Extract the predicted class
+    if model_type == 'binary_classification':
+        y_pred_class = (y_pred > 0.5).astype("int8")
+    elif model_type == 'multiclass_classification':
+        if len(y_pred.shape) == 2:
+            y_pred_class = np.argmax(y_pred, axis=1).astype("int32")
+        else:
+            y_pred_class = y_pred.astype("int32")
+
+    # classification report
+    precision, recall, f1_score, support = precision_recall_fscore_support(y_true, y_pred_class, average=average, labels=labels)
+    # replace nan values with 0 in case (precision + recall) = 0
+    f1_score = np.nan_to_num(f1_score)
+    precision_prec = output_prec(precision, prec)
+    recall_prec = output_prec(recall, prec)
+    f1_score_prec = output_prec(f1_score, prec)
+
+    if model_type == 'multiclass_classification': # and average == 'micro':
+        roc_auc = None
+    else:
+        roc_auc = roc_auc_score(y_true, y_pred, average=average, multi_class='ovr', labels=labels) # ovr -> One-vs-rest: AUC of each class against the rest. Sensitive to class imbalance.
+    if model_type == 'binary_classification':
+        prc_auc = average_precision_score(y_true, y_pred, average=average)
+    else:
+        prc_auc = None
+    roc_auc_prec = output_prec(roc_auc, prec) if roc_auc is not None else None
+    prc_auc_prec = output_prec(prc_auc, prec) if prc_auc is not None else None
+
+    return precision, recall, f1_score, support, precision_prec, recall_prec, f1_score_prec, roc_auc, prc_auc, roc_auc_prec, prc_auc_prec
 ##
 
-def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regression'):
+def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regression', labels=None):
     """Computes, prints and returns RMSE, MAE and R2 for the predictions
 
     Parameters
@@ -104,7 +163,9 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
     prec: int
         Printing precision. (Default: 4)
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'. (Default: 'regression')
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
+    labels: list, optional
+        List of labels for classification tasks. (Default: None)
 
     Returns
     -------
@@ -146,9 +207,10 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
 
     outputs = []
     for true, pred, err_pred in zip(trues, preds, errs_pred):
-        true, pred = np.array(true).ravel(), np.array(pred).ravel()
+        #true, pred = np.array(true).ravel(), np.array(pred).ravel()
 
         if model_type == 'regression':
+            true, pred = np.array(true).ravel(), np.array(pred).ravel()
             rmse = np.sqrt(mean_squared_error(true, pred))
             mae = mean_absolute_error(true, pred)
             r2 = r2_score(true, pred)
@@ -182,37 +244,78 @@ def print_stats(trues, preds, errs_pred=None, prec: int = 4, model_type = 'regre
                 logging.info("")
 
                 outputs.append([rmse, d_rmse, mae, d_mae, r2, d_r2])
-        elif model_type == 'classification':
-            accuracy, precision, recall, f1, prp_auc, _ = classification_metrics(true, pred)
-
-            prec_acc = output_prec(accuracy, prec)
-            prec_prec = output_prec(precision, prec)
-            prec_rec = output_prec(recall, prec)
-            prec_f1 = output_prec(f1, prec)
-            prec_prp_auc = output_prec(prp_auc, prec)
-
+        elif model_type.split('_')[1] == 'classification':
+            ## TODO: add classification metrics per class. With label == None, precision, etc are each returned as a list of scores for each class
+            
             if err_pred is None:
-                logging.info("Averaged accuracy: {0:{1}f}".format(accuracy, prec_acc))
-                logging.info("Averaged precision: {0:{1}f}".format(precision, prec_prec))
-                logging.info("Averaged recall: {0:{1}f}".format(recall, prec_rec))
-                logging.info("Averaged F1: {0:{1}f}".format(f1, prec_f1))
-                logging.info("Averaged AUC: {0:{1}f}".format(prp_auc, prec_prp_auc))
-                logging.info("")
-
-                outputs.append([accuracy, precision, recall, f1, prp_auc])
+                logging.info('Model performance metrics for the ' + set_names.pop() + ' set:')
             else:
-                #TODO(Guillaume): implement error propagation for classification
-                err_pred = np.array(err_pred).ravel()
-                d_acc, d_prec, d_rec, d_f1, d_prp_auc = sigma_classification_metrics(true, pred, err_pred)
+                if len(trues)==1:
+                    logging.info("Final cross-validation statistics:")
+                else:
+                    logging.info("Model performance metrics for the " + set_names.pop() + " set:")
 
-                logging.info("Averaged accuracy: {0:{2}f}+-{1:{2}f}".format(accuracy, d_acc, prec_acc))
-                logging.info("Averaged precision: {0:{2}f}+-{1:{2}f}".format(precision, d_prec, prec_prec))
-                logging.info("Averaged recall: {0:{2}f}+-{1:{2}f}".format(recall, d_rec, prec_rec))
-                logging.info("Averaged F1: {0:{2}f}+-{1:{2}f}".format(f1, d_f1, prec_f1))
-                logging.info("Averaged AUC: {0:{2}f}+-{1:{2}f}".format(prp_auc, d_prp_auc, prec_prp_auc))
-                logging.info("")
+            for i_average in ['micro', 'macro', 'weighted']: #, None]:
+                precision, recall, f1_score, support, \
+                precision_prec, recall_prec, f1_score_prec, \
+                roc_auc, prc_auc, \
+                roc_auc_prec, prc_auc_prec = classification_metrics(true, pred, 
+                                                                    model_type, 
+                                                                    prec = prec, 
+                                                                    average = i_average, 
+                                                                    labels = None if i_average is None else labels)
+            
+                if err_pred is None:
+                    logging.info("{0:} avg".format(i_average))
+                    logging.info("precision: {0:{1}f}".format(precision, precision_prec))
+                    logging.info("recall: {0:{1}f}".format(recall, recall_prec))
+                    logging.info("f1-score: {0:{1}f}".format(f1_score, f1_score_prec))
+                    logging.info("support: {0:}".format(support))
+                    if roc_auc is not None:
+                        logging.info("roc_auc: {0:{1}f}".format(roc_auc, roc_auc_prec))
+                    else:
+                        logging.info("roc_auc: {0:}".format(roc_auc))
+                    if prc_auc is not None:
+                        logging.info("prc_auc: {0:{1}f}".format(prc_auc, prc_auc_prec))
+                    else:
+                        logging.info("prc_auc: {0:}".format(prc_auc))
+                    logging.info("")
 
-                outputs.append([accuracy, d_acc, precision, d_prec, recall, d_rec, f1, d_f1, prp_auc, d_prp_auc])
+                    if i_average is 'micro':
+                        outputs.append([precision, recall, f1_score, roc_auc, prc_auc])
+                    else:
+                        outputs[-1].append(precision, recall, f1_score, roc_auc, prc_auc)
+                else:
+                    err_pred = np.array(err_pred).ravel()
+
+                    d_precision, d_recall, d_f1_score, d_support, \
+                    _, _, _, \
+                    d_roc_auc, d_prc_auc, \
+                    _, _ = sigma_classification_metrics(true, pred, err_pred, 
+                                                        model_type, prec, i_average, 
+                                                        labels = None if i_average is None else labels)
+                    
+                    logging.info("{0:} avg".format(i_average))
+                    logging.info("precision: {0:{2}f}+-{1:{2}f}".format(precision, d_precision, precision_prec))
+                    logging.info("recall: {0:{2}f}+-{1:{2}f}".format(recall, d_recall, recall_prec))
+                    logging.info("f1-score: {0:{2}f}+-{1:{2}f}".format(f1_score, d_f1_score, f1_score_prec))
+                    logging.info("support: {0:}".format(support))
+                    if roc_auc is not None:
+                        logging.info("roc_auc: {0:{2}f}+-{1:{2}f}".format(roc_auc, d_roc_auc, roc_auc_prec))
+                    else:
+                        logging.info("roc_auc: {0:}".format(roc_auc))
+                    if prc_auc is not None:
+                        logging.info("prc_auc: {0:{2}f}+-{1:{2}f}".format(prc_auc, d_prc_auc, prc_auc_prec))
+                    else:
+                        logging.info("prc_auc: {0:}".format(prc_auc))
+                    logging.info("")
+                    
+                    scores_list = [precision, d_precision, recall, d_recall, f1_score, d_f1_score, roc_auc, d_roc_auc, prc_auc, d_prc_auc]
+                    if i_average is 'micro':
+                        outputs.append(scores_list)
+                    else:
+                        for iscore in scores_list:
+                            outputs[-1].append(iscore)
 
     return outputs
 ##
@@ -267,7 +370,7 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
     final: bool
         Whether the plot is built for the final out-of-sample predictions.
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'. (Default: 'regression')
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multi_classification'. (Default: 'regression')
     """
 
     set_names = ['Test', 'Validation', 'Train']
@@ -367,11 +470,21 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
         plt.savefig(file_name, bbox_inches='tight')
         plt.close()
 
-    elif model_type == 'classification':
+    elif model_type.split('_')[1] == 'classification':
         
         #TODO(Guillaume): Account for errors when plotting
         for true, pred, err_pred in zip(trues, preds, errs_pred):
-            true, pred = np.array(true).ravel(), np.array(pred).ravel()
+            if model_type == 'regression':
+                true, pred = np.array(true).ravel(), np.array(pred).ravel()
+
+            # Extract the predicted class
+            if model_type == 'binary_classification':
+                pred_class = (pred > 0.5).astype("int8")
+            elif model_type == 'multiclass_classification':
+                if len(pred.shape) == 2:
+                    pred_class = np.argmax(pred, axis=1).astype("int32")
+                else:
+                    pred_class = pred.astype("int32")
 
             # Legend printing for train/val/test
             if final:
@@ -382,7 +495,7 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
 
             fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
 
-            accuracy, precision, recall, f1, prp_auc, conf_mat = classification_metrics(true, pred)
+            conf_mat = confusion_matrix(true, pred_class)
             cm = ax.matshow(conf_mat)
             for i in range(conf_mat.shape[0]):
                 for j in range(conf_mat.shape[1]):
@@ -403,33 +516,37 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
             plt.savefig(file_name, bbox_inches='tight')
             plt.close()
 
-            # Precision-recall curve plot 
-            # plot the precision-recall curves
-            prp_precision, prp_recall, prp_th = precision_recall_curve(true, pred)
-            # calculate f score
-            fscore = (2 * prp_precision * prp_recall) / (prp_precision + prp_recall)
-            # locate the index of the largest f score
-            best_fscore_idx = np.argmax(fscore)
-            logging.info("Precision-Recall curve best threshold = {0:0.4f}, F1 = {1:0.4f}\n".format(prp_th[best_fscore_idx], fscore[best_fscore_idx]))
-            
-            random_perf = len(true[true==1]) / len(true)
-            plt.plot([0, 1], [random_perf, random_perf], linestyle='--', label='Random')
-            plt.plot(prp_recall, prp_precision, marker='.', label='SMILES-X')
-            plt.scatter(prp_recall[best_fscore_idx], prp_precision[best_fscore_idx], marker='o', color='black', label='Best F1 score')
-            plt.xlabel('Recall', fontsize = 18)
-            plt.ylabel('Precision', fontsize = 18)
-            plt.legend()
+            if model_type == 'binary_classification':
+                # Precision-recall curve plot 
+                # plot the precision-recall curves
+                prp_precision, prp_recall, prp_th = precision_recall_curve(true, pred)
+                # calculate f score
+                fscore = (2 * prp_precision * prp_recall) / (prp_precision + prp_recall)
+                # replace nan values with 0 in case (prp_precision + prp_recall) = 0
+                fscore[np.isnan(fscore)] = 0
+                # locate the index of the largest f score
+                best_fscore_idx = np.argmax(fscore)
+                logging.info("{} set:".format(set_name))
+                logging.info("Precision-Recall curve best threshold = {0:0.4f}, F1 = {1:0.4f}\n".format(prp_th[best_fscore_idx], fscore[best_fscore_idx]))
+                
+                random_perf = len(true[true==1]) / len(true)
+                plt.plot([0, 1], [random_perf, random_perf], linestyle='--', label='Random')
+                plt.plot(prp_recall, prp_precision, marker='.', label='SMILES-X')
+                plt.scatter(prp_recall[best_fscore_idx], prp_precision[best_fscore_idx], marker='o', color='black', label='Best F1 score')
+                plt.xlabel('Recall', fontsize = 18)
+                plt.ylabel('Precision', fontsize = 18)
+                plt.legend()
 
-            # Define file name
-            if final:
-                file_name = '{}/Figures/Pred_vs_True/{}_PredvsTrue_{}_PrecisionRecall_curve_Final.png'.format(save_dir, set_name, dname)
-            elif run is None:
-                file_name = '{}/Figures/Pred_vs_True/Folds/{}_PredvsTrue_{}_PrecisionRecall_curve_Fold_{}.png'.format(save_dir, set_name, dname, fold)
-            else:
-                file_name = '{}/Figures/Pred_vs_True/Runs/{}_PredvsTrue_{}_PrecisionRecall_curve_Fold_{}_Run_{}.png'.format(save_dir, set_name, dname, fold, run)
+                # Define file name
+                if final:
+                    file_name = '{}/Figures/Pred_vs_True/{}_PredvsTrue_{}_PrecisionRecall_curve_Final.png'.format(save_dir, set_name, dname)
+                elif run is None:
+                    file_name = '{}/Figures/Pred_vs_True/Folds/{}_PredvsTrue_{}_PrecisionRecall_curve_Fold_{}.png'.format(save_dir, set_name, dname, fold)
+                else:
+                    file_name = '{}/Figures/Pred_vs_True/Runs/{}_PredvsTrue_{}_PrecisionRecall_curve_Fold_{}_Run_{}.png'.format(save_dir, set_name, dname, fold, run)
 
-            plt.savefig(file_name, bbox_inches='tight')
-            plt.close()
+                plt.savefig(file_name, bbox_inches='tight')
+                plt.close()
 ##
 
 def error_format(val, err, bars):
@@ -487,15 +604,14 @@ def sigma_mae(err_pred):
     return float(sigma_mae)
 ##
 
-#TODO(Guillaume)
 # Compute the error on the estimated classification scores based on the prediction error
 # via a Monte-Carlo simulation
-def sigma_classification_metrics(true, pred, err_pred, n_mc=1000):
+def sigma_classification_metrics(true, pred, err_pred, model_type, prec, average, labels, n_mc=1000):
     N = float(len(err_pred))
-    sigma = np.zeros((n_mc, 5))
+    sigma = np.zeros((n_mc, 11))
     for i in range(n_mc):
-        pred_mc = pred + np.random.normal(0, err_pred)
-        sigma[i,0], sigma[i,1], sigma[i,2], sigma[i,3], sigma[i,4], _ = classification_metrics(true, pred_mc)
+        pred_mc = pred + np.random.normal(0, err_pred).reshape(pred.shape)
+        sigma[i,:] = classification_metrics(true, pred_mc, model_type, prec, average, labels)
     sigma = np.std(sigma, axis=0)
     return sigma.ravel()
 ## 

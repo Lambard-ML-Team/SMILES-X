@@ -19,7 +19,7 @@ from tensorflow.keras.optimizers import Adam, SGD
 
 from SMILESX import utils, augm, token, model, trainutils
 
-def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_length, check_smiles, augmentation, hyper_bounds, hyper_opt, dense_depth, bo_rounds, bo_epochs, bo_runs, strategy, model_type, scale_output, pretrained_model=None):
+def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_length, check_smiles, augmentation, hyper_bounds, hyper_opt, dense_depth, bo_rounds, bo_epochs, bo_runs, strategy, model_type, output_n_nodes, scale_output, pretrained_model=None):
     '''Bayesian optimization of hyperparameters.
 
     Parameters
@@ -60,7 +60,10 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
     strategy:
         GPU memory growth strategy.
     model_type: str
-        Type of the model to be used. Can be either 'regression' or 'classification'.
+        Type of the model to be used. Can be either 'regression', 'binary_classification', or 'multiclass_classification'.
+    output_n_nodes: int
+        Number of output nodes. (Default: 1 for regression and binary classification)
+        It equals to n_class (number of possible classes per output label) for multiclass classification.
     scale_output: bool
         Whether to scale the output property values or not. For binary classification tasks, it is recommended not to scale 
         the categorical (e.g. 0, 1) output values. For regression tasks, this is preferable to guarantee quicker 
@@ -200,14 +203,19 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
                                                           lstm_units=hyper_bo['LSTM'],
                                                           tdense_units=hyper_bo['TD dense'],
                                                           dense_depth=dense_depth, 
-                                                          model_type=model_type)
+                                                          model_type=model_type, 
+                                                          output_n_nodes=output_n_nodes)
             
             if model_type == 'regression':
                 model_loss = 'mse'
                 model_metrics = [metrics.mae, metrics.mse]
                 hist_val_name = 'val_mean_squared_error'
-            elif model_type == 'classification':
+            elif model_type == 'binary_classification':
                 model_loss = 'binary_crossentropy'
+                model_metrics = ['accuracy']
+                hist_val_name = 'val_loss'
+            elif model_type == 'multiclass_classification':
+                model_loss = 'sparse_categorical_crossentropy'
                 model_metrics = ['accuracy']
                 hist_val_name = 'val_loss'
             
@@ -235,7 +243,7 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
             # Skip the first half of epochs during evaluation
             # Ignore the noisy burn-in period of training
             best_epoch = np.argmin(history.history['val_loss'][int(bo_epochs//2):])
-            score_valid = history.history[hist_val_name][best_epoch]
+            score_valid = history.history[hist_val_name][int(bo_epochs//2)+best_epoch]
 
             if math.isnan(score_valid): # treat diverging architectures (rare event)
                 score_valid = math.inf
@@ -243,7 +251,10 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
 
         logging.info('Average best validation score: {0:0.4f}'.format(np.mean(score_valids)))
 
-        return np.mean(score_valids)
+        # Return the mean of the validation scores
+        score_valids_mean = np.mean(score_valids)
+
+        return score_valids_mean
 
     start_bo = time.time()
 

@@ -176,8 +176,8 @@ def main(data_smiles,
         pretrained model. 
         (Default: False)
     model_type: {'regression', 'classification'}, str 
-        Requests if the SMILES-X architecture should perform a 'regression' or binary 'classification' task. 
-        Basically, the activation function of the last layer will be set to 'linear' or 'sigmoid' respectively.
+        Requests if the SMILES-X architecture should perform a regression, binary classification, or multiclass classification task.  
+        Basically, the activation function of the last layer will be set to 'linear', 'sigmoid', or 'softmax' respectively.
         (Default: 'regression') 
     scale_output: bool
         Whether to scale the output property values or not. For binary classification tasks, it is recommended not to scale 
@@ -357,6 +357,25 @@ def main(data_smiles,
         for i in range(data_smiles.shape[1]):
             header.extend(["SMILES_{}".format(i+1)])
     data_prop = data_prop.values
+
+    # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
+    unique_classes = np.unique(data_prop).tolist()
+    if model_type == 'classification':
+        n_class = len(unique_classes) 
+        if n_class == 2:
+            model_type = 'binary_classification'
+            n_class = 1 # for binary_classification tasks with a sigmoid activation function at the output layer, output_n_nodes = n_class = 1
+        elif n_class > 2:
+            model_type = 'multiclass_classification' 
+    else:
+        n_class = 1 # for regression tasks with a linear activation function at the output layer, output_n_nodes = n_class = 1
+
+    # save model_type and n_class to a file
+    with open(save_dir + '/Other/'+ data_name +'_model_type.txt', 'w') as f:
+        f.write(model_type)
+        f.write('\n')
+        f.write(str(n_class))
+
     header.extend([data_label])
     if data_err is not None:
         if data_err.ndim==1:
@@ -396,6 +415,8 @@ def main(data_smiles,
     logging.info("pretrained_data_name = \'{}\'".format(pretrained_data_name))
     logging.info("pretrained_augm = \'{}\'".format(pretrained_augm))
     logging.info("model_type = \'{}\'".format(model_type))
+    if model_type == 'multiclass_classification':
+        logging.info("n_class = {}".format(n_class))
     logging.info("scale_output = \'{}\'".format(scale_output))
     logging.info("geomopt_mode = \'{}\'".format(geomopt_mode))
     logging.info("bayopt_mode = \'{}\'".format(bayopt_mode))
@@ -525,11 +546,14 @@ def main(data_smiles,
         kf_splits = kf.split(X=data_smiles, groups=groups)
         model_loss = 'mse'
         model_metrics = [metrics.mae, metrics.mse]
-    elif model_type == 'classification':
+    else:
         kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True, random_state=42)
         kf.get_n_splits(X=data_smiles, y=data_prop)
         kf_splits = kf.split(X=data_smiles, y=data_prop)
-        model_loss = 'binary_crossentropy'
+        if model_type == 'binary_classification':
+            model_loss = 'binary_crossentropy'
+        elif model_type == 'multiclass_classification':
+            model_loss = 'sparse_categorical_crossentropy'
         model_metrics = ['accuracy']
      
     # Individual counter for the folds of interest in case of k_fold_index
@@ -746,12 +770,12 @@ def main(data_smiles,
                                         max_length=max_length,
                                         geom_file=geom_file,
                                         strategy=strategy, 
-                                        model_type=model_type)
+                                        model_type='regression') # model_type for regression is by default fitted to the geom_search function
             else:
                 logging.info("Trainless geometry optimisation is not requested.")
                 logging.info("")
 
-             # Bayesian optimisation
+             # Bayesian optimisationmodel_type
             if bayopt_mode == 'on':
                 if geomopt_mode == 'on':
                     logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
@@ -778,6 +802,7 @@ def main(data_smiles,
                                               bo_runs=bayopt_n_runs,
                                               strategy=strategy,
                                               model_type=model_type, 
+                                              output_n_nodes=n_class, 
                                               scale_output=scale_output, 
                                               pretrained_model=pretrained_model)
             else:
@@ -808,9 +833,14 @@ def main(data_smiles,
             logging.info("*** TRAINING ***")
             logging.info("")
         start_train = time.time()
-        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
-        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
-        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
+        if model_type != 'multiclass_classification':
+            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
+            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
+            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
+        else:
+            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
+            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
+            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
         
         for run in range(n_runs):
             start_run = time.time()
@@ -854,7 +884,8 @@ def main(data_smiles,
                                                                 lstm_units=hyper_opt["LSTM"],
                                                                 tdense_units=hyper_opt["TD dense"],
                                                                 dense_depth=dense_depth,
-                                                                model_type=model_type)
+                                                                model_type=model_type, 
+                                                                output_n_nodes=n_class)
                         custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
                         model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
                     if (nfold==0 and run==0):
@@ -881,8 +912,7 @@ def main(data_smiles,
                     n_epochs_schedule = [int(n_epochs/3), int(n_epochs/3), n_epochs - 2*int(n_epochs/3)]
 
                     # Fit the model applying the batch size schedule:
-                    n_epochs_done = 0
-                    best_loss = np.Inf
+
                     # Keeping track of history
                     # During BS increments model is trained 3 times, histories should be stitched manually
                     history_train_loss = []
@@ -996,7 +1026,7 @@ def main(data_smiles,
                     history_val_loss = history.history['val_loss']
 
                 # Summarize history for losses per epoch
-                visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run)
+                visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
 
                 logging.info("Evaluating performance of the trained model...")
                 logging.info("")
@@ -1023,25 +1053,35 @@ def main(data_smiles,
                 y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
                 y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
             else:
-                y_pred_train_unscaled = y_pred_train.ravel()
-                y_pred_valid_unscaled = y_pred_valid.ravel()
-                y_pred_test_unscaled = y_pred_test.ravel()
+                y_pred_train_unscaled = y_pred_train.ravel() if model_type != 'multiclass_classification' else y_pred_train
+                y_pred_valid_unscaled = y_pred_valid.ravel() if model_type != 'multiclass_classification' else y_pred_valid
+                y_pred_test_unscaled = y_pred_test.ravel() if model_type != 'multiclass_classification' else y_pred_test
 
-            prediction_train_bag[:, run] = y_pred_train_unscaled
-            prediction_valid_bag[:, run] = y_pred_valid_unscaled
-            prediction_test_bag[:, run]  = y_pred_test_unscaled
+                y_train_clean_unscaled = y_train_clean.ravel()
+                y_valid_clean_unscaled = y_valid_clean.ravel()
+                y_test_clean_unscaled = y_test_clean.ravel()
+
+            if model_type != 'multiclass_classification':
+                prediction_train_bag[:, run] = y_pred_train_unscaled
+                prediction_valid_bag[:, run] = y_pred_valid_unscaled
+                prediction_test_bag[:, run]  = y_pred_test_unscaled
+            else:
+                prediction_train_bag[:,:, run] = y_pred_train_unscaled
+                prediction_valid_bag[:,:, run] = y_pred_valid_unscaled
+                prediction_test_bag[:,:, run]  = y_pred_test_unscaled
 
             # Compute average per set of augmented SMILES for the plots per run
-            y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled)
-            y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled)
-            y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled)
-            
+            y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled, model_type)
+            y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled, model_type)
+            y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled, model_type)
+
             # Print the stats for the run
             visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
                                  preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
                                  errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
                                  prec=prec, 
-                                 model_type=model_type)
+                                 model_type=model_type, 
+                                 labels = unique_classes)
 
             # Plot prediction vs observation plots per run
             visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
@@ -1063,13 +1103,18 @@ def main(data_smiles,
             logging.info("")
 
         # Averaging predictions over augmentations and runs
-        pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag)
-        pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag)
-        pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag)
+        pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag, model_type)
+        pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
+        pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
 
-        # Save the predictions to the final table
-        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
-        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
+        #Save the predictions to the final table
+        if model_type == 'multiclass_classification':
+            pred_test_mean_argmax = np.argmax(pred_test_mean, axis=1).ravel()
+            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean_argmax
+            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma[np.arange(len(pred_test_sigma)), pred_test_mean_argmax.tolist()].ravel()
+        else:
+            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
+            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
         predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
         
         logging.info("Fold {}, overall performance:".format(ifold))
@@ -1079,7 +1124,9 @@ def main(data_smiles,
                                            preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
                                            errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
                                            prec=prec, 
-                                           model_type=model_type)
+                                           model_type=model_type, 
+                                           labels = unique_classes)        
+        
         scores_folds.append([err for set_name in fold_scores for err in set_name])
 
         # Plot prediction vs observation plots for the fold
@@ -1113,12 +1160,14 @@ def main(data_smiles,
             data_prop_clean = data_prop[predictions['Mean'].notna()]
             predictions = predictions.dropna()
 
+            print(predictions['Mean'].values)
             # Print the stats for the whole data
             final_scores = visutils.print_stats(trues=[data_prop_clean],
                                                 preds=[predictions['Mean'].values],
                                                 errs_pred=[predictions['Standard deviation'].values],
                                                 prec=prec, 
-                                                model_type=model_type)
+                                                model_type=model_type, 
+                                                labels = unique_classes)
             
             scores_final = [err for set_name in final_scores for err in set_name]
             
@@ -1137,19 +1186,32 @@ def main(data_smiles,
             
             if model_type == 'regression':
                 scores_list = ['RMSE', 'MAE', 'R2-score']
-            elif model_type == 'classification':
-                scores_list = ['Accuracy', 'Precision', 'Recall', 'F1-score', 'PrecisionRecall-AUC']
+            elif model_type.split('_')[1] == 'classification':
+                scores_list = ['Precision', 'Recall', 'F1-score', 'ROC-AUC', 'PRC-AUC']
 
             scores_folds = pd.DataFrame(scores_folds)
-            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                               scores_list,\
-                                                               ['Mean', 'Sigma']])
+            if model_type == 'regression':
+                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+            elif model_type.split('_')[1] == 'classification':
+                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                   ['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+
             scores_folds.index.name = 'Fold'
             scores_folds.to_csv('{}/{}_Scores_Folds.csv'.format(save_dir, data_name))
             
             scores_final = pd.DataFrame(scores_final).T
-            scores_final.columns = pd.MultiIndex.from_product([scores_list,\
-                                                               ['Mean', 'Sigma']])
+            if model_type == 'regression':
+                scores_final.columns = pd.MultiIndex.from_product([scores_list,\
+                                                                ['Mean', 'Sigma']])
+            else:
+                scores_final.columns = pd.MultiIndex.from_product([['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                   scores_list,\
+                                                                   ['Mean', 'Sigma']])
+                                                                   
             scores_final.to_csv('{}/{}_Scores_Final.csv'.format(save_dir, data_name), index=False)
         
         nfold += 1
