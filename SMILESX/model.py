@@ -78,48 +78,17 @@ class SoftAttention(Layer):
                                  initializer="zeros")
         super(SoftAttention, self).build(input_shape)
 
-    def create_padding_mask(self, seq):
+    def create_padding_mask(self, input_):
         """ Creates a padding mask
         
         The create_padding_mask method takes a sequence as input and creates a mask matrix where 
         all the elements that are equal to 0 in the input sequence are set to 1, while all the other 
-        elements are set to 0. This is achieved using the K.cast(K(seq, 0), dtype='float32') function 
+        elements are set to 0. This is achieved using the K.cast(K(input_, 0), dtype='float32') function 
         in TensorFlow. The output of this method is a mask matrix of the same shape as the input sequence.
 
         Parameters
         ----------
-        seq: tensor
-            The input tensor of shape (batch_size, max_tokens)
-
-        Returns
-        -------
-        mask: tensor
-            The padding mask of shape (batch_size, max_tokens)
-
-        Examples
-        --------
-        >>> seq = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
-        >>> mask = create_padding_mask(seq)
-        >>> mask
-        <tf.Tensor: shape=(2, 5), dtype=float32, numpy=
-        array([[0., 0., 0., 1., 1.],
-                [0., 0., 1., 1., 1.]], dtype=float32)>
-        """
-        seq = K.cast(K.equal(seq, 0), dtype='float32')
-        return seq
-    
-    def create_mask(self, inp):
-        """ Creates all masks
-
-        The create_masks method takes an input sequence (inp) as input and 
-        uses the create_padding_mask method to create a padding mask for the input sequence. 
-        The padding mask is then multiplied by a negative value (-1e9) and returned as the output. 
-        This is done to assign a very low attention weight to the padded positions in the sequence 
-        during further computations, effectively ignoring them.
-
-        Parameters
-        ----------
-        inp: tensor
+        input_: tensor
             The input tensor of shape (batch_size, max_tokens)
 
         Returns
@@ -127,17 +96,53 @@ class SoftAttention(Layer):
         padding_mask: tensor
             The padding mask of shape (batch_size, max_tokens)
 
+        Examples
+        --------
+        >>> input_ = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
+        >>> padding_mask = create_padding_mask(input_)
+        >>> padding_mask
+        <tf.Tensor: shape=(2, 5), dtype=float32, numpy=
+        array([[0., 0., 0., 1., 1.],
+                [0., 0., 1., 1., 1.]], dtype=float32)>
+        """
+        
+        padding_mask = K.cast(K.equal(input_, 0), dtype='float32')
+        
+        return padding_mask
+    
+    def create_masks(self, input_):
+        """ Creates all masks
+
+        The create_masks method takes an input sequence (input_) as input and 
+        uses the create_padding_mask method to create a padding mask for the input sequence. 
+        The padding mask is then multiplied by a negative value (-1e9) and returned as the output. 
+        This is done to assign a very low attention weight to the padded positions in the sequence 
+        during further computations, effectively ignoring them.
+
+        Parameters
+        ----------
+        input_: tensor
+            The input tensor of shape (batch_size, max_tokens)
+
+        Returns
+        -------
+        masks: tensor
+            The masks of shape (batch_size, max_tokens)
+
         Examples    
         --------
-        >>> inp = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
-        >>> padding_mask, look_ahead_mask, dec_padding_mask = create_masks(inp)
-        >>> padding_mask
+        >>> input_ = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
+        >>> masks = create_masks(input_)
+        >>> masks
         <tf.Tensor: shape=(2, 5), dtype=float32, numpy=
         array([[0., 0., 0., -1e9, -1e9],
                 [0., 0., -1e9, -1e9, -1e9]], dtype=float32)>
         """
-        padding_mask = self.create_padding_mask(inp)
-        return padding_mask * -1e9
+        
+        padding_mask = self.create_padding_mask(input_)
+        masks = padding_mask * -1e9 # additional masks can be added here
+
+        return masks
 
     def call(self, x, mask=None):
         """Computes an attention vector on an input matrix
