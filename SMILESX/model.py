@@ -144,7 +144,7 @@ class SoftAttention(Layer):
 
         return masks
 
-    def call(self, x, mask=None):
+    def call(self, x, input_=None):
         """Computes an attention vector on an input matrix
         
         Collapses the tokens dimension by summing up the products of
@@ -160,8 +160,8 @@ class SoftAttention(Layer):
         ----------
         x: tensor
             The output from the time-distributed dense layer (batch_size, max_tokens, tdense_units).
-        mask: tensor (optional)
-            The mask to apply.
+        input_: tensor (optional)
+            The input_ from which masks are created (batch_size, max_tokens).
 
         Returns
         ------
@@ -172,19 +172,18 @@ class SoftAttention(Layer):
         """
         
         et = K.squeeze(K.tanh(K.dot(x, self.W) + self.b), axis=-1)
-        at = K.softmax(et)
+        
+        mask = self.create_masks(input_)
         if mask is not None:
-            at *= K.cast(mask, K.floatx())
+            et += mask
+        at = K.softmax(et)
+
         atx = K.expand_dims(at, axis=-1)
         if self.return_prob:
             return atx # For visualization of the attention weights
         else:
             ot = x * atx
-            return K.sum(ot, axis=1) # For prediction
-
-    def compute_mask(self, input, input_mask=None):
-        """Prevent the mask being passed to the next layers"""
-        return None
+            return K.sum(ot, axis=1) # For prediction and training
 
     def compute_output_shape(self, input_shape):
         """Compute output tensor shape"""
