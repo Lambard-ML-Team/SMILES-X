@@ -218,11 +218,14 @@ class LSTMAttModel:
     weight: int, float
         The value of the shared constant weights used for layer initialization (Default: None)
     model_type: str
-        The type of the model. Can be either 'regression' (last_activation = 'linear') or 
-        'classification' (last_activation = 'sigmoid'). (Default: 'regression')
+        The type of the model. Can be either 'regression' (last_activation = 'linear'), 
+        'binary_classification' (last_activation = 'sigmoid'), or 'multiclass_classification' (last_activation = 'softmax'). 
+        For a molecular language modeling task, the model_type must be set to 'multiclass_classification'. 
+        (Default: 'regression')
     output_n_nodes: int
         The number of output nodes. (Default: 1 for regression and binary classification)
         It equals to n_class (number of possible classes per output label) for multiclass classification.
+        It equals to the size of the vocabulary for a molecular language modeling task. 
 
     Returns
     -------
@@ -280,7 +283,7 @@ class LSTMAttModel:
                                   return_prob=return_prob,
                                   weight=weight,
                                   name="attention")
-        smiles_net = attention(smiles_net)
+        smiles_net = attention(smiles_net, smiles_input)
 
         # In case additional inputs of 'additional_input' are added
         if extra_dim is not None:
