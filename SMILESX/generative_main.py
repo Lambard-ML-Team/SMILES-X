@@ -56,64 +56,53 @@ tf.get_logger().setLevel('ERROR')
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
-def main(data_smiles,
-         data_name: str = 'Test',
-         data_units: str = '',
-         data_label: str  = '',
-         smiles_concat: bool = False,
-         outdir: str = './outputs',
-         geomopt_mode: str ='off',
-         bayopt_mode: str = 'off',
-         train_mode: str = 'on',
-         pretrained_data_name: str = '',
-         pretrained_augm: str = False,
-         model_type = 'regression', 
-         scale_output = True, 
-         embed_bounds: Optional[List[int]] = None,
-         lstm_bounds: Optional[List[int]] = None,
-         tdense_bounds: Optional[List[int]] = None,
-         nonlin_bounds: Optional[List[int]] = None,
-         bs_bounds: Optional[List[int]] = None,
-         lr_bounds: Optional[List[float]] = None,
-         embed_ref: Optional[int] = 512,
-         lstm_ref: Optional[int] = 128,
-         tdense_ref: Optional[int] = 128,
-         dense_depth: Optional[int] = 0,
-         bs_ref: int = 16,
-         lr_ref: float = 3.9,
-         k_fold_number: Optional[int] = 5,
-         k_fold_index: Optional[List[int]] = None,
-         run_index: Optional[List[int]] = None,
-         n_runs: Optional[int] = None,
-         check_smiles: bool = True,
-         augmentation: bool = False,
-         geom_sample_size: int = 32,
-         bayopt_n_rounds: int = 25,
-         bayopt_n_epochs: int = 30,
-         bayopt_n_runs: int = 3,
-         n_gpus: int = 1,
-         gpus_list: Optional[List[int]] = None,
-         gpus_debug: bool = False,
-         patience: int = 25,
-         n_epochs: int = 100,
-         batchsize_pergpu: Optional[int] = None,
-         lr_schedule: Optional[str] = None,
-         bs_increase: bool = False,
-         ignore_first_epochs: int = 0,
-         lr_min: float = 1e-5,
-         lr_max: float = 1e-2,
-         prec: int = 4,
-         log_verbose: bool = True,
-         train_verbose: bool = True) -> None:
-    
-    #TODO(Guillaume): Do not mention copolymers yet in smiles_concat but will be added later
-    #TODO(Guillaume): Check utils.smiles_concat function to prevent misusage when one SMILES/entry
-    #TODO(Guillaume): Review data_name docstring if a timestamp is incorporated in the files path
-
-    #TODO(Guillaume): Add a caution message if already existing output results already exist
-    #TODO(Guillaume): batchsize_pergpu option isn't used. Check it. 
-    
-    '''SMILESX main pipeline
+def generative_main(data_smiles,
+                    data_name: str = 'Test',
+                    smiles_concat: bool = False,
+                    outdir: str = './outputs',
+                    geomopt_mode: str ='off',
+                    bayopt_mode: str = 'off',
+                    train_mode: str = 'on',
+                    pretrained_data_name: str = '',
+                    pretrained_augm: str = False,
+                    model_type = 'regression', 
+                    scale_output = True, 
+                    embed_bounds: Optional[List[int]] = None,
+                    lstm_bounds: Optional[List[int]] = None,
+                    tdense_bounds: Optional[List[int]] = None,
+                    nonlin_bounds: Optional[List[int]] = None,
+                    bs_bounds: Optional[List[int]] = None,
+                    lr_bounds: Optional[List[float]] = None,
+                    embed_ref: Optional[int] = 512,
+                    lstm_ref: Optional[int] = 128,
+                    tdense_ref: Optional[int] = 128,
+                    dense_depth: Optional[int] = 0,
+                    bs_ref: int = 16,
+                    lr_ref: float = 3.9,
+                    run_index: Optional[List[int]] = None,
+                    n_runs: Optional[int] = None,
+                    check_smiles: bool = True,
+                    augmentation: bool = False,
+                    geom_sample_size: int = 32,
+                    bayopt_n_rounds: int = 25,
+                    bayopt_n_epochs: int = 30,
+                    bayopt_n_runs: int = 3,
+                    n_gpus: int = 1,
+                    gpus_list: Optional[List[int]] = None,
+                    gpus_debug: bool = False,
+                    patience: int = 25,
+                    n_epochs: int = 100,
+                    batchsize_pergpu: Optional[int] = None,
+                    lr_schedule: Optional[str] = None,
+                    bs_increase: bool = False,
+                    ignore_first_epochs: int = 0,
+                    lr_min: float = 1e-5,
+                    lr_max: float = 1e-2,
+                    prec: int = 4,
+                    log_verbose: bool = True,
+                    train_verbose: bool = True) -> None:
+        
+    '''Generative SMILESX main pipeline
     Parameters
     ----------
     data_smiles: single or multi columns pandas dataframe
@@ -122,14 +111,6 @@ def main(data_smiles,
         Dataset name used for naming directories and files related to an intended study with the SMILES-X. 
         A good practice is to use the name of the dataset as a prefix for the output files and directories. 
         (Default: 'Test')
-    data_units: str
-        Desired output property's unit to be displayed in plots.
-        (Default: '')
-    data_label: str
-        Desired output property's label to be displayed in plots. 
-        The TeX formmat is supported according to the matplotlib's documentation (see 
-        https://matplotlib.org/stable/gallery/text_labels_and_annotations/tex_demo.html).
-        (Default: '')
     smiles_concat: bool
         Whether to concatenate multiple SMILES per entry with the token 'j' standing for 'join'. 
         This comes in handy if multiple SMILES are provided for a single entry, e.g. blends, etc.
@@ -202,12 +183,6 @@ def main(data_smiles,
         User defined learning rate (no Bayesian optimisation) translated to the Adam optimizer as 
         10**(-lr_ref). 
         (Default: 3.9)
-    k_fold_number: int
-        Number of folds used for a k-fold cross-validation. 
-        (Default: 5)
-    k_fold_index: list(int), optional
-        List of indices of the folds of interest (e.g., [3, 5, 7]), other folds being skipped. 
-        (Default: None)
     run_index: list(int), optional
         List of indices of the runs of interest (e.g., [3, 5, 7]), other runs being skipped. 
         (Default: None)
@@ -284,34 +259,28 @@ def main(data_smiles,
         (Default: 0)
     Returns
     -------
-    For each fold and run the following outputs will be saved in outdir:
+    For each run the following outputs will be saved in outdir:
         -- tokens list (vocabulary) -> *.txt
-        -- scaler -> *.pkl
         -- geometry optimisation scores -> Scores.csv
         -- list of optimized hyperparameters -> Optimized_Hyperparameters.csv
         -- best architecture -> *.hdf5
-        -- training plot (loss vs epoch) ->convert a list to a da History_*.png
-        For regression tasks:
-            -- predictions vs observations plot -> TrainValidTest_*.png
-        For classification tasks:
+        -- training plot (loss vs epoch) -> convert a list to a History_*.png
+        For classification tasks: ???
             -- Confusion matrix (CM) plot -> Train_CM_*.png, Valid_CM_*.png, Test_CM_*.png
             -- Precision-Recall curve (PRC) plot -> Train_PRC_*.png, Valid_PRC_*.png, Test_PRC_*.png
     '''
 
-    # TODO(katia): update Returns list above
     start_time = time.time()
 
     # Define and create output directories
     if train_mode=='finetune':
-        save_dir = '{}/{}/{}/Transfer'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
+        save_dir = '{}/{}/{}/{}/Transfer'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
     else:
-        save_dir = '{}/{}/{}/Train'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
-    scaler_dir = save_dir + '/Other/Scalers'
+        save_dir = '{}/{}/{}/{}/Train'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
     model_dir = save_dir + '/Models'
     pred_plot_run_dir = save_dir + '/Figures/Pred_vs_True/Runs'
-    pred_plot_fold_dir = save_dir + '/Figures/Pred_vs_True/Folds'
     lcurve_dir = save_dir + '/Figures/Learning_Curves'
-    create_dirs = [scaler_dir, model_dir, pred_plot_run_dir, pred_plot_fold_dir, lcurve_dir]
+    create_dirs = [model_dir, pred_plot_run_dir, lcurve_dir]
     for create_dir in create_dirs:
         if not os.path.exists(create_dir):
             os.makedirs(create_dir)
@@ -319,12 +288,12 @@ def main(data_smiles,
     # Setting up logger
     logger, logfile = utils.log_setup(save_dir, "Train", log_verbose)
 
-    logging.info("************************")
-    logging.info("***SMILES-X starts...***")
-    logging.info("************************")
+    logging.info("***********************************")
+    logging.info("***Generative SMILES-X starts...***")
+    logging.info("***********************************")
     logging.info("")
     logging.info("")
-    logging.info("The SMILES-X logs can be found in the " + logfile + " file.")
+    logging.info("The Generative SMILES-X logs can be found in the " + logfile + " file.")
     logging.info("")
 
     # Reading the data
@@ -350,12 +319,9 @@ def main(data_smiles,
         f.write('\n')
         f.write(str(n_class))
 
-    header.extend([data_label])
     err_bars = None
     extra_dim = None
-    if data_label=='':
-        data_label = data_name    
-
+    
     # Initialize Predictions.txt and Scores.csv files
     predictions = pd.DataFrame(data_smiles)
     predictions.columns = header
@@ -365,8 +331,6 @@ def main(data_smiles,
     logging.info("")
     logging.info("data =\n" + tabulate(predictions.head(), header))
     logging.info("data_name = \'{}\'".format(data_name))
-    logging.info("data_units = \'{}\'".format(data_units))
-    logging.info("data_label = \'{}\'".format(data_label))
     logging.info("smiles_concat = \'{}\'".format(smiles_concat))
     logging.info("outdir = \'{}\'".format(outdir))
     logging.info("pretrained_data_name = \'{}\'".format(pretrained_data_name))
@@ -389,8 +353,6 @@ def main(data_smiles,
     logging.info("dense_depth = {}".format(dense_depth))
     logging.info("bs_ref = {}".format(bs_ref))
     logging.info("lr_ref = {}".format(lr_ref))
-    logging.info("k_fold_number = {}".format(k_fold_number))
-    logging.info("k_fold_index = {}".format(k_fold_index))
     logging.info("run_index = {}".format(run_index))
     logging.info("n_runs = {}".format(n_runs))
     logging.info("augmentation = {}".format(augmentation))
