@@ -57,7 +57,6 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 def main(data_smiles,
-         data_prop,
          data_name: str = 'Test',
          data_units: str = '',
          data_label: str  = '',
@@ -119,9 +118,6 @@ def main(data_smiles,
     ----------
     data_smiles: single or multi columns pandas dataframe
         A single or multiple columns pandas dataframe of SMILES as inputs.
-    data_prop: single column pandas dataframe
-        A single column pandas dataframe of true property values as outputs, e.g. experimental measurements, etc. 
-        It should have the same length than the provided set of input SMILES.
     data_name: str
         Dataset name used for naming directories and files related to an intended study with the SMILES-X. 
         A good practice is to use the name of the dataset as a prefix for the output files and directories. 
@@ -343,19 +339,10 @@ def main(data_smiles,
     else:
         for i in range(data_smiles.shape[1]):
             header.extend(["SMILES_{}".format(i+1)])
-    data_prop = data_prop.values
 
     # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
-    unique_classes = np.unique(data_prop).tolist()
-    if model_type == 'classification':
-        n_class = len(unique_classes) 
-        if n_class == 2:
-            model_type = 'binary_classification'
-            n_class = 1 # for binary_classification tasks with a sigmoid activation function at the output layer, output_n_nodes = n_class = 1
-        elif n_class > 2:
-            model_type = 'multiclass_classification' 
-    else:
-        n_class = 1 # for regression tasks with a linear activation function at the output layer, output_n_nodes = n_class = 1
+    model_type = 'multiclass_classification' 
+    n_class = "size of vocab"
 
     # save model_type and n_class to a file
     with open(save_dir + '/Other/'+ data_name +'_model_type.txt', 'w') as f:
@@ -370,8 +357,7 @@ def main(data_smiles,
         data_label = data_name    
 
     # Initialize Predictions.txt and Scores.csv files
-    predictions = np.concatenate([arr for arr in (data_smiles, data_prop.reshape(-1,1)) if arr is not None], axis=1)
-    predictions = pd.DataFrame(predictions)
+    predictions = pd.DataFrame(data_smiles)
     predictions.columns = header
     scores_folds = []
 
@@ -505,29 +491,10 @@ def main(data_smiles,
             raise utils.StopExecution
         pretrained_model = None
 
-    # Setting up the cross-validation according to the model_type
-    # For regression
-    # Splitting is done based on groups of the provided SMILES data
-    # This is done for the cases where the same SMILES has multiple entries with
-    # varying additional parameters (molecular weight, proportion, processing time, etc.)
-    # For classification
-    # Splitting is done based on the provided property (e.g. class) data
-    if model_type == 'regression':
-        groups = pd.DataFrame(data_smiles).groupby(by=0).ngroup().values.tolist()
-        kf = GroupKFold(n_splits=k_fold_number)
-        kf.get_n_splits(X=data_smiles, groups=groups)
-        kf_splits = kf.split(X=data_smiles, groups=groups)
-        model_loss = 'mse'
-        model_metrics = [metrics.mae, metrics.mse]
-    else:
-        kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True, random_state=42)
-        kf.get_n_splits(X=data_smiles, y=data_prop)
-        kf_splits = kf.split(X=data_smiles, y=data_prop)
-        if model_type == 'binary_classification':
-            model_loss = 'binary_crossentropy'
-        elif model_type == 'multiclass_classification':
-            model_loss = 'sparse_categorical_crossentropy'
-        model_metrics = ['accuracy']
+    # Setting up the loss and metrics according to the model_type
+    model_loss = 'sparse_categorical_crossentropy'
+    model_metrics = [metrics.categorical_accuracy, 
+                     metrics.top_k_categorical_accuracy]
      
     # Individual counter for the folds of interest in case of k_fold_index
     nfold = 0
@@ -558,17 +525,17 @@ def main(data_smiles,
         logging.info("***Fold #{} initiated...***".format(ifold))
         logging.info("")
         
-        logging.info("***Splitting and standardization of the dataset.***")
-        logging.info("")
-        x_train, x_valid, x_test, \
-        _, _, _, \
-        y_train, y_valid, y_test, \
-        y_err_train, y_err_valid, y_err_test = utils.rand_split(smiles_input = data_smiles,
-                                                                prop_input = data_prop,
-                                                                extra_input = None,
-                                                                err_input = None,
-                                                                train_val_idx = train_val_idx,
-                                                                test_idx = test_idx)
+        # logging.info("***Splitting and standardization of the dataset.***")
+        # logging.info("")
+        # x_train, x_valid, x_test, \
+        # _, _, _, \
+        # y_train, y_valid, y_test, \
+        # y_err_train, y_err_valid, y_err_test = utils.rand_split(smiles_input = data_smiles,
+        #                                                         prop_input = data_prop,
+        #                                                         extra_input = None,
+        #                                                         err_input = None,
+        #                                                         train_val_idx = train_val_idx,
+        #                                                         test_idx = test_idx)
         # Scale the outputs
         if scale_output:
             scaler_out_file = '{}/{}_Scaler_Outputs'.format(scaler_dir, data_name)
@@ -745,7 +712,7 @@ def main(data_smiles,
                         logging.info("Skipping...")
                         logging.info("")
                 hyper_opt = bayopt.bayopt_run(smiles=data_smiles,
-                                              prop=data_prop,
+                                              # prop=data_prop, ???
                                               extra=None,
                                               train_val_idx=train_val_idx,
                                               smiles_concat=smiles_concat,
@@ -1112,32 +1079,31 @@ def main(data_smiles,
             logging.info("***Preparing the final out-of-sample prediction.***")
             logging.info("")
             
-            data_prop_clean = data_prop[predictions['Mean'].notna()]
             predictions = predictions.dropna()
 
             print(predictions['Mean'].values)
             # Print the stats for the whole data
-            final_scores = visutils.print_stats(trues=[data_prop_clean],
-                                                preds=[predictions['Mean'].values],
-                                                errs_pred=[predictions['Standard deviation'].values],
-                                                prec=prec, 
-                                                model_type=model_type, 
-                                                labels = unique_classes)
+            # final_scores = visutils.print_stats(trues=[data_prop_clean],
+            #                                     preds=[predictions['Mean'].values],
+            #                                     errs_pred=[predictions['Standard deviation'].values],
+            #                                     prec=prec, 
+            #                                     model_type=model_type, 
+            #                                     labels = unique_classes)
             
             scores_final = [err for set_name in final_scores for err in set_name]
             
             # Final plot for prediction vs observation
-            visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
-                              preds=[predictions['Mean'].values],
-                              errs_true=[None],
-                              errs_pred=[predictions['Standard deviation'].values],
-                              err_bars=err_bars,
-                              save_dir=save_dir,
-                              dname=data_name,
-                              dlabel=data_label,
-                              units=data_units,
-                              final=True, 
-                              model_type=model_type)
+            # visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
+            #                   preds=[predictions['Mean'].values],
+            #                   errs_true=[None],
+            #                   errs_pred=[predictions['Standard deviation'].values],
+            #                   err_bars=err_bars,
+            #                   save_dir=save_dir,
+            #                   dname=data_name,
+            #                   dlabel=data_label,
+            #                   units=data_units,
+            #                   final=True, 
+            #                   model_type=model_type)
             
             if model_type == 'regression':
                 scores_list = ['RMSE', 'MAE', 'R2-score']
