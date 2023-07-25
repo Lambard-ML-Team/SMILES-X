@@ -302,22 +302,13 @@ def generative_main(data_smiles,
     if data_smiles.ndim==1:
         data_smiles = data_smiles.reshape(-1,1)
         header.extend(["SMILES"])
-    elif data_smiles.shape[1]==1:
+    else:
+        data_smiles.shape[1]==1:
         data_smiles = data_smiles.reshape(-1,1)
         header.extend(["SMILES"])
-    else:
-        for i in range(data_smiles.shape[1]):
-            header.extend(["SMILES_{}".format(i+1)])
 
-    # n_class: number of classes allocated as the number of output nodes in the last layer of the model for classification tasks
+    # Default model type for the generative SMILES-X
     model_type = 'multiclass_classification' 
-    n_class = "size of vocab"
-
-    # save model_type and n_class to a file
-    with open(save_dir + '/Other/'+ data_name +'_model_type.txt', 'w') as f:
-        f.write(model_type)
-        f.write('\n')
-        f.write(str(n_class))
 
     err_bars = None
     extra_dim = None
@@ -336,8 +327,6 @@ def generative_main(data_smiles,
     logging.info("pretrained_data_name = \'{}\'".format(pretrained_data_name))
     logging.info("pretrained_augm = \'{}\'".format(pretrained_augm))
     logging.info("model_type = \'{}\'".format(model_type))
-    if model_type == 'multiclass_classification':
-        logging.info("n_class = {}".format(n_class))
     logging.info("scale_output = \'{}\'".format(scale_output))
     logging.info("geomopt_mode = \'{}\'".format(geomopt_mode))
     logging.info("bayopt_mode = \'{}\'".format(bayopt_mode))
@@ -378,18 +367,15 @@ def generative_main(data_smiles,
     logging.info("")
 
     # Setting up GPUs
-    strategy, gpus = utils.set_gpuoptions(n_gpus=n_gpus,
-                                          gpus_list=gpus_list,
-                                          gpus_debug=gpus_debug)
+    strategy, gpus = else:
+        for i in range(data_smiles.shape[1]):
+            header.extend(["SMILES_{}".format(i+1)])utils.set_gpuoptions(n_gpus=n_gpus,
+                                                                         gpus_list=gpus_list,
+                                                                         gpus_debug=gpus_debug)
     if strategy is None:
         raise utils.StopExecution
     logging.info("{} Logical GPU(s) detected and configured.".format(len(gpus)))
     logging.info("")
-
-    # Setting up the scores summary
-    scores_summary = {'train': [],
-                      'valid': [],
-                      'test': []}
 
     if ignore_first_epochs >= n_epochs:
             logging.error("ERROR:")
@@ -439,15 +425,9 @@ def generative_main(data_smiles,
         logging.info("Fine-tuning a pretrained model isn't implemented yet.")
         return
     else:
-        if k_fold_number is None:
-            logging.error("ERROR:")
-            logging.error("The number of cross-validation folds (`k_fold_number`) is not defined.")
-            logging.error("")
-            logging.error("*** SMILES-X EXECUTION ABORTED ***")
-            raise utils.StopExecution
         if n_runs is None:
             logging.error("ERROR:")
-            logging.error("The number of runs per fold (`n_runs`) is not defined.")
+            logging.error("The number of runs (`n_runs`) is not defined.")
             logging.error("")
             logging.error("*** SMILES-X EXECUTION ABORTED ***")
             raise utils.StopExecution
@@ -457,648 +437,562 @@ def generative_main(data_smiles,
     model_loss = 'sparse_categorical_crossentropy'
     model_metrics = [metrics.categorical_accuracy, 
                      metrics.top_k_categorical_accuracy]
-     
-    # Individual counter for the folds of interest in case of k_fold_index
-    nfold = 0
-    for ifold, (train_val_idx, test_idx) in enumerate(kf_splits):
-        start_fold = time.time()
+    
+    # Keep track of the fold number for every data point ???
+    predictions.loc[test_idx, 'Fold'] = ifold
 
-        # In case only some of the folds are requested for training
-        if k_fold_index is not None:
-            k_fold_number = len(k_fold_index)
-            if ifold not in k_fold_index:
+    # Estimate remaining training duration based on the first fold duration ???
+    if nfold > 0:
+        if nfold == 1:
+            onefold_time = time.time() - start_time # First fold's duration
+        elif nfold < (k_fold_number - 1):
+            logging.info("Remaining time: {:.2f} h. Processing fold #{} of data..."\
+                            .format((k_fold_number - nfold) * onefold_time/3600., ifold))
+        elif nfold == (k_fold_number - 1):
+            logging.info("Remaining time: {:.2f} h. Processing the last fold of data..."\
+                            .format(onefold_time/3600.))
+
+    # Check/augment the data if requested
+    train_augm = augm.augmentation(data_smiles = data_smiles,
+                                   indices = np.arange(data_smiles.shape[0]),
+                                   check_smiles = check_smiles,
+                                   augment = augmentation)
+    
+    x_train_enum, _, y_train_enum, y_train_clean, x_train_enum_card, _ = train_augm
+    
+    logging.info("Enumerated SMILES:")
+    logging.info("\tTraining set: {}".format(len(x_train_enum)))
+    logging.info("")
+
+    logging.info("***Tokenization of SMILES.***")
+    logging.info("")
+
+    # Tokenize SMILES per dataset
+    x_train_enum_tokens = token.get_tokens(x_train_enum)
+
+    logging.info("Examples of tokenized SMILES from a training set:")
+    logging.info("{}".format(x_train_enum_tokens[:5]))
+    logging.info("")
+
+    # Vocabulary size computation
+    all_smiles_tokens = x_train_enum_tokens
+
+    # Check if the vocabulary for current dataset exists already
+    vocab_file = '{}/Other/{}_Vocabulary.txt'.format(save_dir, data_name)
+    if os.path.exists(vocab_file):
+        tokens = token.get_vocab(vocab_file)
+    else:
+        tokens = token.extract_vocab(all_smiles_tokens)
+        token.save_vocab(tokens, vocab_file)
+        tokens = token.get_vocab(vocab_file)
+
+    # TODO(kathya): add info on how much previous model vocabs differ from the current data train/val/test vocabs
+    #               (for transfer learning)
+    train_unique_tokens = token.extract_vocab(x_train_enum_tokens)
+    logging.info("Number of tokens only present in training set: {}".format(len(train_unique_tokens)))
+    logging.info("")
+
+    # Add 'pad' (padding), 'unk' (unknown) tokens to the existing list
+    tokens.insert(0,'unk')
+    tokens.insert(0,'pad')
+
+    # n_class: number of classes allocated as the number of output nodes in the last layer of the generative SMILES-X model
+    n_class = len(tokens)
+
+    logging.info("Full vocabulary: {}".format(tokens))
+    logging.info("Vocabulary size: {}".format(len(tokens)))
+    logging.info("")
+
+    # Maximum of length of SMILES to process
+    max_length = np.max([len(ismiles) for ismiles in all_smiles_tokens])
+    logging.info("Maximum length of tokenized SMILES: {} tokens (termination spaces included)".format(max_length))
+    logging.info("")
+
+    # predict and compare for the training, validation and test sets
+    x_train_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_train_enum_tokens,
+                                                        max_length=max_length + 1,
+                                                        vocab=tokens)
+                                                        
+    # Hyperparameters optimisation
+    logging.info("*** HYPERPARAMETERS OPTIMISATION ***")
+    logging.info("")
+
+    # Dictionary to store optimized hyperparameters
+    # Initialize at reference values, update gradually
+    hyper_opt = {'Embedding': embed_ref,
+                    'LSTM': lstm_ref,
+                    'TD dense': tdense_ref,
+                    'Batch size': bs_ref,
+                    'Learning rate': lr_ref}
+    hyper_bounds = {'Embedding': embed_bounds,
+                    'LSTM': lstm_bounds,
+                    'TD dense': tdense_bounds,
+                    'Batch size': bs_bounds,
+                    'Learning rate': lr_bounds}
+    
+    # Geometry optimisation
+    if geomopt_mode == 'on':
+        geom_file = '{}/Other/{}_GeomScores.csv'.format(save_dir, data_name)
+        # Do not optimize the architecture in case of transfer learning
+        if train_mode=='finetune':
+            logging.info("Transfer learning is requested together with geometry optimisation,")
+            logging.info("but the architecture is already fixed in the original model.")
+            logging.info("Only batch size and learning rate can be tuned.")
+            logging.info("Skipping geometry optimisation...")
+            logging.info("")
+        else:
+            hyper_opt, hyper_bounds = \
+            geomopt.geom_search(data_token=x_train_enum_tokens_tointvec,
+                                data_extra=None,
+                                subsample_size=geom_sample_size,
+                                hyper_bounds=hyper_bounds,
+                                hyper_opt=hyper_opt,
+                                dense_depth=dense_depth,
+                                vocab_size=len(tokens),
+                                max_length=max_length,
+                                geom_file=geom_file,
+                                strategy=strategy, 
+                                model_type='regression') # model_type for regression is by default fitted to the geom_search function
+    else:
+        logging.info("Trainless geometry optimisation is not requested.")
+        logging.info("")
+
+        # Bayesian optimisationmodel_type
+    if bayopt_mode == 'on':
+        if geomopt_mode == 'on':
+            logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
+            logging.info("")
+            if not any([bs_bounds, lr_bounds]):
+                logging.info("Batch size bounds and learning rate bounds are not defined.")
+                logging.info("Bayesian optimisation has no parameters to optimize.")
+                logging.info("Skipping...")
+                logging.info("")
+        hyper_opt = bayopt.bayopt_run(smiles=data_smiles,
+                                      # prop=data_prop, ???
+                                      extra=None,
+                                      train_val_idx=train_val_idx,
+                                      smiles_concat=smiles_concat,
+                                      tokens=tokens,
+                                      max_length=max_length,
+                                      check_smiles=check_smiles,
+                                      augmentation=augmentation,
+                                      hyper_bounds=hyper_bounds,
+                                      hyper_opt=hyper_opt,
+                                      dense_depth=dense_depth,
+                                      bo_rounds=bayopt_n_rounds,
+                                      bo_epochs=bayopt_n_epochs,
+                                      bo_runs=bayopt_n_runs,
+                                      strategy=strategy,
+                                      model_type=model_type, 
+                                      output_n_nodes=n_class, 
+                                      scale_output=scale_output, 
+                                      pretrained_model=pretrained_model)
+    else:
+        logging.info("Bayesian optimisation is not requested.")
+        logging.info("")
+        if geomopt == 'off':
+            logging.info("Using reference values for training.")
+            logging.info("")
+
+    hyper_df = pd.DataFrame([hyper_opt.values()], columns = hyper_opt.keys())
+    hyper_file = "{}/Other/{}_Hyperparameters.csv".format(save_dir, data_name)
+    hyper_df.to_csv(hyper_file, index=False)
+
+    logging.info("*** HYPERPARAMETERS OPTIMISATION COMPLETED ***")
+    logging.info("")
+    
+    logging.info("The following hyperparameters will be used for training:")
+    for key in hyper_opt.keys():
+        if key == "Learning rate":
+            logging.info("    - {}: 10^-{}".format(key, hyper_opt[key]))
+        else:
+            logging.info("    - {}: {}".format(key, hyper_opt[key]))
+    logging.info("")
+    logging.info("File containing the list of used hyperparameters:")
+    logging.info("    {}".format(hyper_file))
+    logging.info("")
+
+    logging.info("*** TRAINING ***")
+    logging.info("")
+
+    start_train = time.time()
+
+    if model_type != 'multiclass_classification':
+        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
+        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
+        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
+    else:
+        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
+        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
+        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
+    
+    for run in range(n_runs):
+        start_run = time.time()
+
+        # In case only some of the runs are requested for training
+        if run_index is not None:
+            if run not in run_index:
                 continue
-        
-        # Keep track of the fold number for every data point
-        predictions.loc[test_idx, 'Fold'] = ifold
 
-        # Estimate remaining training duration based on the first fold duration
-        if nfold > 0:
-            if nfold == 1:
-                onefold_time = time.time() - start_time # First fold's duration
-            elif nfold < (k_fold_number - 1):
-                logging.info("Remaining time: {:.2f} h. Processing fold #{} of data..."\
-                             .format((k_fold_number - nfold) * onefold_time/3600., ifold))
-            elif nfold == (k_fold_number - 1):
-                logging.info("Remaining time: {:.2f} h. Processing the last fold of data..."\
-                             .format(onefold_time/3600.))
+        logging.info("*** Run #{} ***".format(run))
+        logging.info(time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()))
 
-        logging.info("")
-        logging.info("***Fold #{} initiated...***".format(ifold))
-        logging.info("")
-        
-        # logging.info("***Splitting and standardization of the dataset.***")
-        # logging.info("")
-        # x_train, x_valid, x_test, \
-        # _, _, _, \
-        # y_train, y_valid, y_test, \
-        # y_err_train, y_err_valid, y_err_test = utils.rand_split(smiles_input = data_smiles,
-        #                                                         prop_input = data_prop,
-        #                                                         extra_input = None,
-        #                                                         err_input = None,
-        #                                                         train_val_idx = train_val_idx,
-        #                                                         test_idx = test_idx)
-        # Scale the outputs
-        if scale_output:
-            scaler_out_file = '{}/{}_Scaler_Outputs'.format(scaler_dir, data_name)
-            y_train_scaled, y_valid_scaled, y_test_scaled, scaler = utils.robust_scaler(train=y_train,
-                                                                                        valid=y_valid,
-                                                                                        test=y_test,
-                                                                                        file_name=scaler_out_file,
-                                                                                        ifold=ifold)
-        else:
-            y_train_scaled, y_valid_scaled, y_test_scaled, scaler = y_train, y_valid, y_test, None
-        
-        # Check/augment the data if requested
-        train_augm = augm.augmentation(data_smiles = x_train,
-                                       indices = train_val_idx,
-                                       check_smiles = check_smiles,
-                                       augment = augmentation)
-
-        valid_augm = augm.augmentation(data_smiles = x_valid,
-                                       indices = train_val_idx,
-                                       check_smiles = check_smiles,
-                                       augment = augmentation)
-
-        test_augm = augm.augmentation(data_smiles = x_test,
-                                      indices = test_idx,
-                                      check_smiles = check_smiles,
-                                      augmnet = augmentation)
-        
-        x_train_enum, _, y_train_enum, y_train_clean, x_train_enum_card, _ = train_augm
-        x_valid_enum, _, y_valid_enum, y_valid_clean, x_valid_enum_card, _ = valid_augm
-        x_test_enum, _, y_test_enum, y_test_clean, x_test_enum_card, test_idx_clean = test_augm
-                
-        # Concatenate multiple SMILES into one via 'j' joint
-        if smiles_concat:
-            x_train_enum = utils.smiles_concat(x_train_enum)
-            x_valid_enum = utils.smiles_concat(x_valid_enum)
-            x_test_enum = utils.smiles_concat(x_test_enum)
-        
-        logging.info("Enumerated SMILES:")
-        logging.info("\tTraining set: {}".format(len(x_train_enum)))
-        logging.info("\tValidation set: {}".format(len(x_valid_enum)))
-        logging.info("\tTest set: {}".format(len(x_test_enum)))
-        logging.info("")
-
-        logging.info("***Tokenization of SMILES.***")
-        logging.info("")
-
-        # Tokenize SMILES per dataset
-        x_train_enum_tokens = token.get_tokens(x_train_enum)
-        x_valid_enum_tokens = token.get_tokens(x_valid_enum)
-        x_test_enum_tokens = token.get_tokens(x_test_enum)
-
-        logging.info("Examples of tokenized SMILES from a training set:")
-        logging.info("{}".format(x_train_enum_tokens[:5]))
-        logging.info("")
-
-        # Vocabulary size computation
-        all_smiles_tokens = x_train_enum_tokens+x_valid_enum_tokens+x_test_enum_tokens
-
-        # Check if the vocabulary for current dataset exists already
-        vocab_file = '{}/Other/{}_Vocabulary.txt'.format(save_dir, data_name)
-        if os.path.exists(vocab_file):
-            tokens = token.get_vocab(vocab_file)
-        else:
-            tokens = token.extract_vocab(all_smiles_tokens)
-            token.save_vocab(tokens, vocab_file)
-            tokens = token.get_vocab(vocab_file)
-
-        # TODO(kathya): add info on how much previous model vocabs differ from the current data train/val/test vocabs
-        #               (for transfer learning)
-        train_unique_tokens = token.extract_vocab(x_train_enum_tokens)
-        logging.info("Number of tokens only present in training set: {}".format(len(train_unique_tokens)))
-        logging.info("")
-
-        valid_unique_tokens = token.extract_vocab(x_valid_enum_tokens)
-        logging.info("Number of tokens only present in validation set: {}".format(len(valid_unique_tokens)))
-        if valid_unique_tokens.issubset(train_unique_tokens):
-            logging.info("Validation set contains no new tokens comparing to training set tokens")
-        else:
-            logging.info("Validation set contains the following new tokens comparing to training set tokens:")
-            logging.info(valid_unique_tokens.difference(train_unique_tokens))
-            logging.info("")
-
-        test_unique_tokens = token.extract_vocab(x_test_enum_tokens)
-        logging.info("Number of tokens only present in a test set: {}".format(len(test_unique_tokens)))
-        if test_unique_tokens.issubset(train_unique_tokens):
-            logging.info("Test set contains no new tokens comparing to the training set tokens")
-        else:
-            logging.info("Test set contains the following new tokens comparing to the training set tokens:")
-            logging.info(test_unique_tokens.difference(train_unique_tokens))
-
-        if test_unique_tokens.issubset(valid_unique_tokens):
-            logging.info("Test set contains no new tokens comparing to the validation set tokens")
-        else:
-            logging.info("Test set contains the following new tokens comparing to the validation set tokens:")
-            logging.info(test_unique_tokens.difference(valid_unique_tokens))
-            logging.info("")
-
-        # Add 'pad' (padding), 'unk' (unknown) tokens to the existing list
-        tokens.insert(0,'unk')
-        tokens.insert(0,'pad')
-
-        logging.info("Full vocabulary: {}".format(tokens))
-        logging.info("Vocabulary size: {}".format(len(tokens)))
-        logging.info("")
-
-        # Maximum of length of SMILES to process
-        max_length = np.max([len(ismiles) for ismiles in all_smiles_tokens])
-        logging.info("Maximum length of tokenized SMILES: {} tokens (termination spaces included)".format(max_length))
-        logging.info("")
-
-        # predict and compare for the training, validation and test sets
-        x_train_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_train_enum_tokens,
-                                                            max_length=max_length + 1,
-                                                            vocab=tokens)
-        x_valid_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_valid_enum_tokens,
-                                                            max_length=max_length + 1,
-                                                            vocab=tokens)
-        x_test_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_test_enum_tokens,
-                                                           max_length=max_length + 1,
-                                                           vocab=tokens)
-        # Hyperparameters optimisation
-        if nfold==0:
-            logging.info("*** HYPERPARAMETERS OPTIMISATION ***")
-            logging.info("")
-
-        # Dictionary to store optimized hyperparameters
-        # Initialize at reference values, update gradually
-            hyper_opt = {'Embedding': embed_ref,
-                         'LSTM': lstm_ref,
-                         'TD dense': tdense_ref,
-                         'Batch size': bs_ref,
-                         'Learning rate': lr_ref}
-            hyper_bounds = {'Embedding': embed_bounds,
-                            'LSTM': lstm_bounds,
-                            'TD dense': tdense_bounds,
-                            'Batch size': bs_bounds,
-                            'Learning rate': lr_bounds}
+        # Checkpoint, Early stopping and callbacks definition
+        filepath = '{}/{}_Model_Fold_{}_Run_{}.hdf5'.format(model_dir, data_name, ifold, run)
             
-            # Geometry optimisation
-            if geomopt_mode == 'on':
-                geom_file = '{}/Other/{}_GeomScores.csv'.format(save_dir, data_name)
-                # Do not optimize the architecture in case of transfer learning
-                if train_mode=='finetune':
-                    logging.info("Transfer learning is requested together with geometry optimisation,")
-                    logging.info("but the architecture is already fixed in the original model.")
-                    logging.info("Only batch size and learning rate can be tuned.")
-                    logging.info("Skipping geometry optimisation...")
-                    logging.info("")
-                else:
-                    hyper_opt, hyper_bounds = \
-                    geomopt.geom_search(data_token=x_train_enum_tokens_tointvec,
-                                        data_extra=None,
-                                        subsample_size=geom_sample_size,
-                                        hyper_bounds=hyper_bounds,
-                                        hyper_opt=hyper_opt,
-                                        dense_depth=dense_depth,
-                                        vocab_size=len(tokens),
-                                        max_length=max_length,
-                                        geom_file=geom_file,
-                                        strategy=strategy, 
-                                        model_type='regression') # model_type for regression is by default fitted to the geom_search function
-            else:
-                logging.info("Trainless geometry optimisation is not requested.")
-                logging.info("")
-
-             # Bayesian optimisationmodel_type
-            if bayopt_mode == 'on':
-                if geomopt_mode == 'on':
-                    logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
-                    logging.info("")
-                    if not any([bs_bounds, lr_bounds]):
-                        logging.info("Batch size bounds and learning rate bounds are not defined.")
-                        logging.info("Bayesian optimisation has no parameters to optimize.")
-                        logging.info("Skipping...")
-                        logging.info("")
-                hyper_opt = bayopt.bayopt_run(smiles=data_smiles,
-                                              # prop=data_prop, ???
-                                              extra=None,
-                                              train_val_idx=train_val_idx,
-                                              smiles_concat=smiles_concat,
-                                              tokens=tokens,
-                                              max_length=max_length,
-                                              check_smiles=check_smiles,
-                                              augmentation=augmentation,
-                                              hyper_bounds=hyper_bounds,
-                                              hyper_opt=hyper_opt,
-                                              dense_depth=dense_depth,
-                                              bo_rounds=bayopt_n_rounds,
-                                              bo_epochs=bayopt_n_epochs,
-                                              bo_runs=bayopt_n_runs,
-                                              strategy=strategy,
-                                              model_type=model_type, 
-                                              output_n_nodes=n_class, 
-                                              scale_output=scale_output, 
-                                              pretrained_model=pretrained_model)
-            else:
-                logging.info("Bayesian optimisation is not requested.")
-                logging.info("")
-                if geomopt == 'off':
-                    logging.info("Using reference values for training.")
-                    logging.info("")
-
-            hyper_df = pd.DataFrame([hyper_opt.values()], columns = hyper_opt.keys())
-            hyper_file = "{}/Other/{}_Hyperparameters.csv".format(save_dir, data_name)
-            hyper_df.to_csv(hyper_file, index=False)
-
-            logging.info("*** HYPERPARAMETERS OPTIMISATION COMPLETED ***")
+        if train_mode == 'off' or os.path.exists(filepath):
+            logging.info("Training was set to `off`.")
+            logging.info("Evaluating performance based on the previously trained models...")
             logging.info("")
-            
-            logging.info("The following hyperparameters will be used for training:")
-            for key in hyper_opt.keys():
-                if key == "Learning rate":
-                    logging.info("    - {}: 10^-{}".format(key, hyper_opt[key]))
-                else:
-                    logging.info("    - {}: {}".format(key, hyper_opt[key]))
-            logging.info("")
-            logging.info("File containing the list of used hyperparameters:")
-            logging.info("    {}".format(hyper_file))
-            logging.info("")
-
-            logging.info("*** TRAINING ***")
-            logging.info("")
-        start_train = time.time()
-        if model_type != 'multiclass_classification':
-            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
-            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
-            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
         else:
-            prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
-            prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
-            prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
-        
-        for run in range(n_runs):
-            start_run = time.time()
-
-            # In case only some of the runs are requested for training
-            if run_index is not None:
-                if run not in run_index:
-                    continue
-
-            logging.info("*** Run #{} ***".format(run))
-            logging.info(time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()))
-
-            # Checkpoint, Early stopping and callbacks definition
-            filepath = '{}/{}_Model_Fold_{}_Run_{}.hdf5'.format(model_dir, data_name, ifold, run)
-                
-            if train_mode == 'off' or os.path.exists(filepath):
-                logging.info("Training was set to `off`.")
-                logging.info("Evaluating performance based on the previously trained models...")
-                logging.info("")
-            else:
-                # Create and compile the model
-                K.clear_session()
-                # Freeze the first half of the network in case of transfer learning
-                if train_mode == 'finetune':
-                    model_train = model.model_dic['Fold_{}'.format(ifold)][run]
-                    # Freeze encoding layers
-                    #TODO(Guillaume): Check if this is the best way to freeze the layers as layers' name may differ
-                    for layer in mod.layers:
-                        if layer.name in ['embedding', 'bidirectional', 'time_distributed']:
-                            layer.trainable = False
-                    if (nfold==0 and run==0):
-                        logging.info("Retrieved model summary:")
-                        model_train.summary(print_fn=logging.info)
-                        logging.info("")
-                elif (train_mode == 'train' or train_mode == 'on'):
-                    with strategy.scope():
-                        model_train = model.LSTMAttModel.create(input_tokens=max_length+1,
-                                                                extra_dim=extra_dim,
-                                                                vocab_size=len(tokens),
-                                                                embed_units=hyper_opt["Embedding"],
-                                                                lstm_units=hyper_opt["LSTM"],
-                                                                tdense_units=hyper_opt["TD dense"],
-                                                                dense_depth=dense_depth,
-                                                                model_type=model_type, 
-                                                                output_n_nodes=n_class)
-                        custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
-                        model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
-                    if (nfold==0 and run==0):
-                        logging.info("Model summary:")
-                        model_train.summary(print_fn=logging.info)
-                        logging.info("\n")
-
-                batch_size = hyper_opt["Batch size"]
-                if bs_increase:
-                    # Apply batch increments schedule in accordance with the paper by S.Smith, Q.Le,
-                    # "Don't decay the learning rate, increase the batch size"
-                    # https://arxiv.org/abs/1711.00489
-                    logging.info("Batch size increment option is selected,")
-                    logging.info("learning rate schedule will NOT be applied.")
+            # Create and compile the model
+            K.clear_session()
+            # Freeze the first half of the network in case of transfer learning
+            if train_mode == 'finetune':
+                model_train = model.model_dic['Fold_{}'.format(ifold)][run]
+                # Freeze encoding layers
+                #TODO(Guillaume): Check if this is the best way to freeze the layers as layers' name may differ
+                for layer in mod.layers:
+                    if layer.name in ['embedding', 'bidirectional', 'time_distributed']:
+                        layer.trainable = False
+                if (nfold==0 and run==0):
+                    logging.info("Retrieved model summary:")
+                    model_train.summary(print_fn=logging.info)
                     logging.info("")
-                    if ignore_first_epochs >= n_epochs:
-                        logging.info("The number of epochs to be ignored, `ignore_first_epochs`,")
-                        logging.info("should be strictly less than the total number of epochs to train, `n_epochs`.")
-                        raise utils.StopExecution
+            elif (train_mode == 'train' or train_mode == 'on'):
+                with strategy.scope():
+                    model_train = model.LSTMAttModel.create(input_tokens=max_length+1,
+                                                            extra_dim=extra_dim,
+                                                            vocab_size=len(tokens),
+                                                            embed_units=hyper_opt["Embedding"],
+                                                            lstm_units=hyper_opt["LSTM"],
+                                                            tdense_units=hyper_opt["TD dense"],
+                                                            dense_depth=dense_depth,
+                                                            model_type=model_type, 
+                                                            output_n_nodes=n_class)
+                    custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
+                    model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
+                if (nfold==0 and run==0):
+                    logging.info("Model summary:")
+                    model_train.summary(print_fn=logging.info)
+                    logging.info("\n")
 
-                    # Setting up the batch size schedule
-                    # Increment batch twofold every 1/3 of the total of epochs (heuristic)
-                    batch_size_schedule = [int(batch_size), int(batch_size*2), int(batch_size*4)]
-                    n_epochs_schedule = [int(n_epochs/3), int(n_epochs/3), n_epochs - 2*int(n_epochs/3)]
+            batch_size = hyper_opt["Batch size"]
+            if bs_increase:
+                # Apply batch increments schedule in accordance with the paper by S.Smith, Q.Le,
+                # "Don't decay the learning rate, increase the batch size"
+                # https://arxiv.org/abs/1711.00489
+                logging.info("Batch size increment option is selected,")
+                logging.info("learning rate schedule will NOT be applied.")
+                logging.info("")
+                if ignore_first_epochs >= n_epochs:
+                    logging.info("The number of epochs to be ignored, `ignore_first_epochs`,")
+                    logging.info("should be strictly less than the total number of epochs to train, `n_epochs`.")
+                    raise utils.StopExecution
 
-                    # Fit the model applying the batch size schedule:
+                # Setting up the batch size schedule
+                # Increment batch twofold every 1/3 of the total of epochs (heuristic)
+                batch_size_schedule = [int(batch_size), int(batch_size*2), int(batch_size*4)]
+                n_epochs_schedule = [int(n_epochs/3), int(n_epochs/3), n_epochs - 2*int(n_epochs/3)]
 
-                    # Keeping track of history
-                    # During BS increments model is trained 3 times, histories should be stitched manually
-                    history_train_loss = []
-                    history_val_loss = []
+                # Fit the model applying the batch size schedule:
 
-                    # Define callbacks
-                    n_epochs_done = 0
-                    best_loss = np.Inf
-                    best_epoch = 0
-                    logging.info("Training:")
-                    for i, batch_size in enumerate(batch_size_schedule):
-                        if i == (len(batch_size_schedule) - 1):
-                            last = True
-                        else:
-                            last = False
-                        n_epochs_part = n_epochs_schedule[i]
-                        # Ignores noise fluctuations of the beginning of the training
-                        # Avoids picking up undertrained model
-                        # TODO: add early stopping to ignorebeginning
-                        ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
-                                                                             n_epochs=n_epochs_part,
-                                                                             best_loss=best_loss,
-                                                                             best_epoch=best_epoch,
-                                                                             initial_epoch=n_epochs_done,
-                                                                             ignore_first_epochs=ignore_first_epochs,
-                                                                             last=last)
-                        logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
-                        # Default callback list
-                        callbacks_list = [ignorebeginning, logcallback]
-                        with strategy.scope():
-                            if i == 0:
-                                logging.info("The batch size is initialized at {}".format(batch_size))
-                                logging.info("")
-                            else:
-                                logging.info("")
-                                logging.info("The batch size is changed to {}".format(batch_size))
-                                logging.info("")
-                            history = model_train.fit(\
-                                      trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
-                                                              extra=None,
-                                                              props=y_train_enum,
-                                                              batch_size=batch_size * strategy.num_replicas_in_sync),
-                                      validation_data = \
-                                      trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
-                                                              extra=None,
-                                                              props=y_valid_enum,
-                                                              batch_size=batch_size * strategy.num_replicas_in_sync),
-                                      shuffle=True,
-                                      initial_epoch=n_epochs_done,
-                                      epochs=n_epochs_done + n_epochs_part,
-                                      callbacks=callbacks_list,
-                                      verbose=train_verbose,
-                                      max_queue_size=batch_size,
-                                      use_multiprocessing=False,
-                                      workers=1)
-                        history_train_loss += history.history['loss']
-                        history_val_loss += history.history['val_loss']
-                        best_loss = ignorebeginning.best_loss
-                        best_epoch = ignorebeginning.best_epoch
-                        n_epochs_done += n_epochs_part
-                else:
+                # Keeping track of history
+                # During BS increments model is trained 3 times, histories should be stitched manually
+                history_train_loss = []
+                history_val_loss = []
+
+                # Define callbacks
+                n_epochs_done = 0
+                best_loss = np.Inf
+                best_epoch = 0
+                logging.info("Training:")
+                for i, batch_size in enumerate(batch_size_schedule):
+                    if i == (len(batch_size_schedule) - 1):
+                        last = True
+                    else:
+                        last = False
+                    n_epochs_part = n_epochs_schedule[i]
+                    # Ignores noise fluctuations of the beginning of the training
+                    # Avoids picking up undertrained model
+                    # TODO: add early stopping to ignorebeginning
                     ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
-                                                                         n_epochs=n_epochs,
-                                                                         best_loss=np.Inf,
-                                                                         initial_epoch=0,
-                                                                         ignore_first_epochs=ignore_first_epochs)
+                                                                            n_epochs=n_epochs_part,
+                                                                            best_loss=best_loss,
+                                                                            best_epoch=best_epoch,
+                                                                            initial_epoch=n_epochs_done,
+                                                                            ignore_first_epochs=ignore_first_epochs,
+                                                                            last=last)
                     logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
                     # Default callback list
                     callbacks_list = [ignorebeginning, logcallback]
-                    # Additional callbacks
-                    if lr_schedule == 'decay':
-                        schedule = trainutils.StepDecay(initAlpha=lr_max,
-                                                        finalAlpha=lr_min,
-                                                        gamma=0.95,
-                                                        epochs=n_epochs)
-                        callbacks_list.append(LearningRateScheduler(schedule))
-                    elif lr_schedule == 'clr':
-                        clr = trainutils.CyclicLR(base_lr=lr_min,
-                                                  max_lr=lr_max,
-                                                  step_size=8*(x_train_enum_tokens_tointvec.shape[0] // \
-                                                              (batch_size//strategy.num_replicas_in_sync)),
-                                                  mode='triangular')
-                        callbacks_list.append(clr)
-                    elif lr_schedule == 'cosine':
-                        cosine_anneal = trainutils.CosineAnneal(initial_learning_rate=lr_max,
-                                                                final_learning_rate=lr_min,
-                                                                epochs=n_epochs)
-                        callbacks_list.append(cosine_anneal)
-
-                    # Fit the model
                     with strategy.scope():
+                        if i == 0:
+                            logging.info("The batch size is initialized at {}".format(batch_size))
+                            logging.info("")
+                        else:
+                            logging.info("")
+                            logging.info("The batch size is changed to {}".format(batch_size))
+                            logging.info("")
                         history = model_train.fit(\
-                                      trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
-                                                              extra=None,
-                                                              props=y_train_enum,
-                                                              batch_size=batch_size * strategy.num_replicas_in_sync),
-                                      validation_data = \
-                                      trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
-                                                              extra=None,
-                                                              props=y_valid_enum,
-                                                              batch_size=batch_size * strategy.num_replicas_in_sync),
-                                      shuffle=True,
-                                      initial_epoch=0,
-                                      epochs=n_epochs,
-                                      callbacks=callbacks_list,
-                                      verbose=train_verbose,
-                                      max_queue_size=batch_size,
-                                      use_multiprocessing=False,
-                                      workers=1)
-                    history_train_loss = history.history['loss']
-                    history_val_loss = history.history['val_loss']
-
-                # Summarize history for losses per epoch
-                visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
-
-                logging.info("Evaluating performance of the trained model...")
-                logging.info("")
-
-            with tf.device(gpus[0].name):
-                K.clear_session()
-                model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
-                
-                y_pred_train = model_train.predict({"smiles": x_train_enum_tokens_tointvec})
-                y_pred_valid = model_train.predict({"smiles": x_valid_enum_tokens_tointvec})
-                y_pred_test = model_train.predict({"smiles": x_test_enum_tokens_tointvec})
-
-            # Unscale prediction outcomes
-            if scale_output:
-                y_pred_train_unscaled = scaler.inverse_transform(y_pred_train.reshape(-1,1)).ravel()
-                y_pred_valid_unscaled = scaler.inverse_transform(y_pred_valid.reshape(-1,1)).ravel()
-                y_pred_test_unscaled = scaler.inverse_transform(y_pred_test.reshape(-1,1)).ravel()
-                
-                y_train_clean_unscaled = scaler.inverse_transform(y_train_clean.reshape(-1,1)).ravel()
-                y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
-                y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
+                                    trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
+                                                            extra=None,
+                                                            props=y_train_enum,
+                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
+                                    validation_data = \
+                                    trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
+                                                            extra=None,
+                                                            props=y_valid_enum,
+                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
+                                    shuffle=True,
+                                    initial_epoch=n_epochs_done,
+                                    epochs=n_epochs_done + n_epochs_part,
+                                    callbacks=callbacks_list,
+                                    verbose=train_verbose,
+                                    max_queue_size=batch_size,
+                                    use_multiprocessing=False,
+                                    workers=1)
+                    history_train_loss += history.history['loss']
+                    history_val_loss += history.history['val_loss']
+                    best_loss = ignorebeginning.best_loss
+                    best_epoch = ignorebeginning.best_epoch
+                    n_epochs_done += n_epochs_part
             else:
-                y_pred_train_unscaled = y_pred_train.ravel() if model_type != 'multiclass_classification' else y_pred_train
-                y_pred_valid_unscaled = y_pred_valid.ravel() if model_type != 'multiclass_classification' else y_pred_valid
-                y_pred_test_unscaled = y_pred_test.ravel() if model_type != 'multiclass_classification' else y_pred_test
+                ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
+                                                                        n_epochs=n_epochs,
+                                                                        best_loss=np.Inf,
+                                                                        initial_epoch=0,
+                                                                        ignore_first_epochs=ignore_first_epochs)
+                logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
+                # Default callback list
+                callbacks_list = [ignorebeginning, logcallback]
+                # Additional callbacks
+                if lr_schedule == 'decay':
+                    schedule = trainutils.StepDecay(initAlpha=lr_max,
+                                                    finalAlpha=lr_min,
+                                                    gamma=0.95,
+                                                    epochs=n_epochs)
+                    callbacks_list.append(LearningRateScheduler(schedule))
+                elif lr_schedule == 'clr':
+                    clr = trainutils.CyclicLR(base_lr=lr_min,
+                                                max_lr=lr_max,
+                                                step_size=8*(x_train_enum_tokens_tointvec.shape[0] // \
+                                                            (batch_size//strategy.num_replicas_in_sync)),
+                                                mode='triangular')
+                    callbacks_list.append(clr)
+                elif lr_schedule == 'cosine':
+                    cosine_anneal = trainutils.CosineAnneal(initial_learning_rate=lr_max,
+                                                            final_learning_rate=lr_min,
+                                                            epochs=n_epochs)
+                    callbacks_list.append(cosine_anneal)
 
-                y_train_clean_unscaled = y_train_clean.ravel()
-                y_valid_clean_unscaled = y_valid_clean.ravel()
-                y_test_clean_unscaled = y_test_clean.ravel()
+                # Fit the model
+                with strategy.scope():
+                    history = model_train.fit(\
+                                    trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
+                                                            extra=None,
+                                                            props=y_train_enum,
+                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
+                                    validation_data = \
+                                    trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
+                                                            extra=None,
+                                                            props=y_valid_enum,
+                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
+                                    shuffle=True,
+                                    initial_epoch=0,
+                                    epochs=n_epochs,
+                                    callbacks=callbacks_list,
+                                    verbose=train_verbose,
+                                    max_queue_size=batch_size,
+                                    use_multiprocessing=False,
+                                    workers=1)
+                history_train_loss = history.history['loss']
+                history_val_loss = history.history['val_loss']
 
-            if model_type != 'multiclass_classification':
-                prediction_train_bag[:, run] = y_pred_train_unscaled
-                prediction_valid_bag[:, run] = y_pred_valid_unscaled
-                prediction_test_bag[:, run]  = y_pred_test_unscaled
-            else:
-                prediction_train_bag[:,:, run] = y_pred_train_unscaled
-                prediction_valid_bag[:,:, run] = y_pred_valid_unscaled
-                prediction_test_bag[:,:, run]  = y_pred_test_unscaled
+            # Summarize history for losses per epoch
+            visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
 
-            # Compute average per set of augmented SMILES for the plots per run
-            y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled, model_type)
-            y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled, model_type)
-            y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled, model_type)
-
-            # Print the stats for the run
-            visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                                 preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
-                                 errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
-                                 prec=prec, 
-                                 model_type=model_type, 
-                                 labels = unique_classes)
-
-            # Plot prediction vs observation plots per run
-            visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                              preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
-                              errs_true=[y_err_train, y_err_valid, y_err_test],
-                              errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
-                              err_bars=err_bars,
-                              save_dir=save_dir,
-                              dname=data_name,
-                              dlabel=data_label,
-                              units=data_units,
-                              fold=ifold,
-                              run=run, 
-                              model_type=model_type)
-
-            end_run = time.time()
-            elapsed_run = end_run - start_run
-            logging.info("Fold {}, run {} duration: {}".format(ifold, run, str(datetime.timedelta(seconds=elapsed_run))))
+            logging.info("Evaluating performance of the trained model...")
             logging.info("")
 
-        # Averaging predictions over augmentations and runs
-        pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag, model_type)
-        pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
-        pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
+        with tf.device(gpus[0].name):
+            K.clear_session()
+            model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
+            
+            y_pred_train = model_train.predict({"smiles": x_train_enum_tokens_tointvec})
+            y_pred_valid = model_train.predict({"smiles": x_valid_enum_tokens_tointvec})
+            y_pred_test = model_train.predict({"smiles": x_test_enum_tokens_tointvec})
 
-        #Save the predictions to the final table
-        if model_type == 'multiclass_classification':
-            pred_test_mean_argmax = np.argmax(pred_test_mean, axis=1).ravel()
-            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean_argmax
-            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma[np.arange(len(pred_test_sigma)), pred_test_mean_argmax.tolist()].ravel()
+        # Unscale prediction outcomes
+        if scale_output:
+            y_pred_train_unscaled = scaler.inverse_transform(y_pred_train.reshape(-1,1)).ravel()
+            y_pred_valid_unscaled = scaler.inverse_transform(y_pred_valid.reshape(-1,1)).ravel()
+            y_pred_test_unscaled = scaler.inverse_transform(y_pred_test.reshape(-1,1)).ravel()
+            
+            y_train_clean_unscaled = scaler.inverse_transform(y_train_clean.reshape(-1,1)).ravel()
+            y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
+            y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
         else:
-            predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
-            predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
-        predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
-        
-        logging.info("Fold {}, overall performance:".format(ifold))
+            y_pred_train_unscaled = y_pred_train.ravel() if model_type != 'multiclass_classification' else y_pred_train
+            y_pred_valid_unscaled = y_pred_valid.ravel() if model_type != 'multiclass_classification' else y_pred_valid
+            y_pred_test_unscaled = y_pred_test.ravel() if model_type != 'multiclass_classification' else y_pred_test
 
-        # Print the stats for the fold
-        fold_scores = visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                                           preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
-                                           errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
-                                           prec=prec, 
-                                           model_type=model_type, 
-                                           labels = unique_classes)        
-        
-        scores_folds.append([err for set_name in fold_scores for err in set_name])
+            y_train_clean_unscaled = y_train_clean.ravel()
+            y_valid_clean_unscaled = y_valid_clean.ravel()
+            y_test_clean_unscaled = y_test_clean.ravel()
 
-        # Plot prediction vs observation plots for the fold
+        if model_type != 'multiclass_classification':
+            prediction_train_bag[:, run] = y_pred_train_unscaled
+            prediction_valid_bag[:, run] = y_pred_valid_unscaled
+            prediction_test_bag[:, run]  = y_pred_test_unscaled
+        else:
+            prediction_train_bag[:,:, run] = y_pred_train_unscaled
+            prediction_valid_bag[:,:, run] = y_pred_valid_unscaled
+            prediction_test_bag[:,:, run]  = y_pred_test_unscaled
+
+        # Compute average per set of augmented SMILES for the plots per run
+        y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled, model_type)
+        y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled, model_type)
+        y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled, model_type)
+
+        # Print the stats for the run
+        visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
+                                preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
+                                errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
+                                prec=prec, 
+                                model_type=model_type, 
+                                labels = unique_classes)
+
+        # Plot prediction vs observation plots per run
         visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                          preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
-                          errs_true=[y_err_train, y_err_valid, y_err_test],
-                          errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
-                          err_bars=err_bars,
-                          save_dir=save_dir,
-                          dname=data_name,
-                          dlabel=data_label,
-                          units=data_units,
-                          fold=ifold,
-                          run=None, 
-                          model_type=model_type)
+                            preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
+                            errs_true=[y_err_train, y_err_valid, y_err_test],
+                            errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
+                            err_bars=err_bars,
+                            save_dir=save_dir,
+                            dname=data_name,
+                            dlabel=data_label,
+                            units=data_units,
+                            fold=ifold,
+                            run=run, 
+                            model_type=model_type)
 
-        end_fold = time.time()
-        elapsed_fold = end_fold - start_fold
-        logging.info("Fold {} duration: {}".format(ifold, str(datetime.timedelta(seconds=elapsed_fold))))
+        end_run = time.time()
+        elapsed_run = end_run - start_run
+        logging.info("Fold {}, run {} duration: {}".format(ifold, run, str(datetime.timedelta(seconds=elapsed_run))))
         logging.info("")
 
-        if ifold == (k_fold_number-1) and not k_fold_index:
-            logging.info("*******************************")
-            logging.info("***Predictions score summary***")
-            logging.info("*******************************")
-            logging.info("")
+    # Averaging predictions over augmentations and runs
+    pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag, model_type)
+    pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
+    pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
 
-            logging.info("***Preparing the final out-of-sample prediction.***")
-            logging.info("")
-            
-            predictions = predictions.dropna()
+    #Save the predictions to the final table
+    if model_type == 'multiclass_classification':
+        pred_test_mean_argmax = np.argmax(pred_test_mean, axis=1).ravel()
+        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean_argmax
+        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma[np.arange(len(pred_test_sigma)), pred_test_mean_argmax.tolist()].ravel()
+    else:
+        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
+        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
+    predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
+    
+    logging.info("Fold {}, overall performance:".format(ifold))
 
-            print(predictions['Mean'].values)
-            # Print the stats for the whole data
-            # final_scores = visutils.print_stats(trues=[data_prop_clean],
-            #                                     preds=[predictions['Mean'].values],
-            #                                     errs_pred=[predictions['Standard deviation'].values],
-            #                                     prec=prec, 
-            #                                     model_type=model_type, 
-            #                                     labels = unique_classes)
-            
-            scores_final = [err for set_name in final_scores for err in set_name]
-            
-            # Final plot for prediction vs observation
-            # visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
-            #                   preds=[predictions['Mean'].values],
-            #                   errs_true=[None],
-            #                   errs_pred=[predictions['Standard deviation'].values],
-            #                   err_bars=err_bars,
-            #                   save_dir=save_dir,
-            #                   dname=data_name,
-            #                   dlabel=data_label,
-            #                   units=data_units,
-            #                   final=True, 
-            #                   model_type=model_type)
-            
-            if model_type == 'regression':
-                scores_list = ['RMSE', 'MAE', 'R2-score']
-            elif model_type.split('_')[1] == 'classification':
-                scores_list = ['Precision', 'Recall', 'F1-score', 'ROC-AUC', 'PRC-AUC']
+    # Print the stats for the fold
+    fold_scores = visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
+                                        preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
+                                        errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
+                                        prec=prec, 
+                                        model_type=model_type, 
+                                        labels = unique_classes)        
+    
+    scores_folds.append([err for set_name in fold_scores for err in set_name])
 
-            scores_folds = pd.DataFrame(scores_folds)
-            if model_type == 'regression':
-                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                                   scores_list,\
-                                                                   ['Mean', 'Sigma']])
-            elif model_type.split('_')[1] == 'classification':
-                scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                                   ['Micro avg', 'Macro avg', 'Weighted avg'],\
-                                                                   scores_list,\
-                                                                   ['Mean', 'Sigma']])
+    # Plot prediction vs observation plots for the fold
+    visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
+                        preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
+                        errs_true=[y_err_train, y_err_valid, y_err_test],
+                        errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
+                        err_bars=err_bars,
+                        save_dir=save_dir,
+                        dname=data_name,
+                        dlabel=data_label,
+                        units=data_units,
+                        fold=ifold,
+                        run=None, 
+                        model_type=model_type)
 
-            scores_folds.index.name = 'Fold'
-            scores_folds.to_csv('{}/{}_Scores_Folds.csv'.format(save_dir, data_name))
-            
-            scores_final = pd.DataFrame(scores_final).T
-            if model_type == 'regression':
-                scores_final.columns = pd.MultiIndex.from_product([scores_list,\
+    end_fold = time.time()
+    elapsed_fold = end_fold - start_fold
+    logging.info("Fold {} duration: {}".format(ifold, str(datetime.timedelta(seconds=elapsed_fold))))
+    logging.info("")
+
+    if ifold == (k_fold_number-1) and not k_fold_index:
+        logging.info("*******************************")
+        logging.info("***Predictions score summary***")
+        logging.info("*******************************")
+        logging.info("")
+
+        logging.info("***Preparing the final out-of-sample prediction.***")
+        logging.info("")
+        
+        predictions = predictions.dropna()
+
+        print(predictions['Mean'].values)
+        # Print the stats for the whole data
+        # final_scores = visutils.print_stats(trues=[data_prop_clean],
+        #                                     preds=[predictions['Mean'].values],
+        #                                     errs_pred=[predictions['Standard deviation'].values],
+        #                                     prec=prec, 
+        #                                     model_type=model_type, 
+        #                                     labels = unique_classes)
+        
+        scores_final = [err for set_name in final_scores for err in set_name]
+        
+        # Final plot for prediction vs observation
+        # visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
+        #                   preds=[predictions['Mean'].values],
+        #                   errs_true=[None],
+        #                   errs_pred=[predictions['Standard deviation'].values],
+        #                   err_bars=err_bars,
+        #                   save_dir=save_dir,
+        #                   dname=data_name,
+        #                   dlabel=data_label,
+        #                   units=data_units,
+        #                   final=True, 
+        #                   model_type=model_type)
+        
+        if model_type == 'regression':
+            scores_list = ['RMSE', 'MAE', 'R2-score']
+        elif model_type.split('_')[1] == 'classification':
+            scores_list = ['Precision', 'Recall', 'F1-score', 'ROC-AUC', 'PRC-AUC']
+
+        scores_folds = pd.DataFrame(scores_folds)
+        if model_type == 'regression':
+            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                scores_list,\
                                                                 ['Mean', 'Sigma']])
-            else:
-                scores_final.columns = pd.MultiIndex.from_product([['Micro avg', 'Macro avg', 'Weighted avg'],\
-                                                                   scores_list,\
-                                                                   ['Mean', 'Sigma']])
-                                                                   
-            scores_final.to_csv('{}/{}_Scores_Final.csv'.format(save_dir, data_name), index=False)
+        elif model_type.split('_')[1] == 'classification':
+            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
+                                                                ['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                scores_list,\
+                                                                ['Mean', 'Sigma']])
+
+        scores_folds.index.name = 'Fold'
+        scores_folds.to_csv('{}/{}_Scores_Folds.csv'.format(save_dir, data_name))
         
-        nfold += 1
-        
+        scores_final = pd.DataFrame(scores_final).T
+        if model_type == 'regression':
+            scores_final.columns = pd.MultiIndex.from_product([scores_list,\
+                                                            ['Mean', 'Sigma']])
+        else:
+            scores_final.columns = pd.MultiIndex.from_product([['Micro avg', 'Macro avg', 'Weighted avg'],\
+                                                                scores_list,\
+                                                                ['Mean', 'Sigma']])
+                                                                
+        scores_final.to_csv('{}/{}_Scores_Final.csv'.format(save_dir, data_name), index=False)
+            
     logging.info("*******************************************")
     logging.info("***SMILES_X has terminated successfully.***")
     logging.info("*******************************************")
