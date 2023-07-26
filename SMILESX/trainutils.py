@@ -10,6 +10,21 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.callbacks import Callback
 
+import shutil
+
+from rdkit import Chem
+# Disables RDKit whiny logging.
+import rdkit.rdBase as rkrb
+import rdkit.RDLogger as rkl
+logger = rkl.logger()
+logger.setLevel(rkl.ERROR)
+rkrb.DisableLog('rdApp.error')
+
+from SMILESX import token, model
+
+np.random.seed(seed=123)
+np.set_printoptions(precision=3)
+
 class DataSequence(Sequence):
     """Split data into batches for trainin
 
@@ -52,12 +67,15 @@ class DataSequence(Sequence):
 
     def __getitem__(self, idx):
         batch_smiles = self.smiles[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_prop = self.props[idx * self.batch_size:(idx + 1) * self.batch_size]
-        if self.extra is not None:
-            batch_extra = self.extra[idx * self.batch_size:(idx + 1) * self.batch_size]
-            return {"smiles": batch_smiles, "extra": batch_extra}, batch_prop
+        if self.props is not None:
+            batch_prop = self.props[idx * self.batch_size:(idx + 1) * self.batch_size]
+            if self.extra is not None:
+                batch_extra = self.extra[idx * self.batch_size:(idx + 1) * self.batch_size]
+                return {"smiles": batch_smiles, "extra": batch_extra}, batch_prop
+            else:
+                return {"smiles": batch_smiles}, batch_prop
         else:
-            return {"smiles": batch_smiles}, batch_prop
+            return {"smiles": batch_smiles}
 ##
 
 class CyclicLR(Callback):
@@ -354,8 +372,8 @@ class CxUxN(object):
         List of initial SMILES
     data_name: str
         Name of the dataset
-    vocab_path: str
-        Path to the vocabulary file
+    vocab: list
+        List of tokens
     gen_max_length: int
         Maximum length of the generated SMILES
     gpus: list
@@ -372,6 +390,8 @@ class CxUxN(object):
         Function to use for printing
     save_dir: str
         Path to the directory where the model is saved.
+    verbose: bool
+        Whether to print the evaluation of a generation
 
     Returns
     -------
@@ -383,20 +403,10 @@ class CxUxN(object):
         {"smiles": batch_smiles}, batch_prop - when no extra data is provided
     """
     
-    def __init__(self, init_data, data_name, 
-                 vocab_path, gen_max_length,
-                 gpus, 
-                 model_init, 
-                 n_generate = 1000, 
-                 warm_up = 0, 
-                 batch_size = 128, 
-                 print_fcn = print, 
-                 save_dir = None):
-        #super(CxUxN, self).__init__() #Callback.__init__(self) 
+    def __init__(self, init_data, data_name, vocab, gen_max_length, gpus, model_init, n_generate = 1000, warm_up = 0, batch_size = 128, print_fcn = print, save_dir = None, verbose = False):
         self.init_data_set = set(init_data)
         self.data_name = data_name
-        # Tokens as a list
-        self.gen_tokens = token.get_vocab(vocab_path)
+        self.gen_tokens = vocab
         self.gen_max_length = gen_max_length
         self.gpus = gpus
         self.model_init = model_init
@@ -406,9 +416,8 @@ class CxUxN(object):
         self.print_fcn = print_fcn
         self.save_dir = save_dir
         
-        # Add 'pad', 'unk' tokens to the existing list
+        # tokens to integers and vice versa
         self.vocab_size = len(self.gen_tokens)
-        self.gen_tokens, self.vocab_size = token.add_extra_tokens(self.gen_tokens, self.vocab_size)
         token_to_int = token.get_tokentoint(self.gen_tokens)
         self.int_to_token = token.get_inttotoken(self.gen_tokens)
         
@@ -417,26 +426,27 @@ class CxUxN(object):
         self.suf_token_int = token_to_int[' ']
         
         # model loading on CPU
-#         model_weights = self.model.get_weights()
         lstmunits = self.model_init.layers[2].output_shape[-1]//2
-        denseunits = self.model_init.layers[3].output_shape[-1]
+        tdenseunits = self.model_init.layers[3].output_shape[-1]
         embedding = self.model_init.layers[1].output_shape[-1]
         with tf.device(self.gpus[-1].name):
             K.clear_session()
             # Model's architecture for generation
-            self.gen_model = model.LSTMAttModel.create(inputtokens = self.gen_max_length, 
+            self.gen_model = model.LSTMAttModel.create(input_tokens = self.gen_max_length, 
                                                        vocabsize = self.vocab_size, 
-                                                       lstmunits= lstmunits, 
-                                                       denseunits = denseunits, 
-                                                       embedding = embedding)
+                                                       embed_units = embedding, 
+                                                       lstm_units= lstmunits, 
+                                                       tdense_units = tdenseunits, 
+                                                       model_type = 'multiclass_classification', 
+                                                       output_n_nodes = self.vocab_size)
         
-        # Scores list
+        # Correctness, Uniqueness, Novelty, CxUxN score lists
         self.cor_list = []
         self.uniq_list = []
         self.novel_list = []
         self.cun_list = []
         
-        # CxUxN Score max and related epoch
+        # CxUxN score max and related epoch
         self.cun_max = 0
         self.best_epoch = 0
 
@@ -448,27 +458,31 @@ class CxUxN(object):
         preds = exp_preds / np.sum(exp_preds, axis=1).reshape(-1,1)
         return preds
 
+    # helper function to sample an index from a probability array
     def sample(self, preds, temperature=1.0):
-        # helper function to sample an index from a probability array
         preds = self.normalize(preds, temperature)
         probas = np.zeros(preds.shape)
         for ipred in range(preds.shape[0]):
             probas[ipred] = np.random.multinomial(1, preds[ipred], 1)[0]
         return probas.astype('bool') #np.argmax(probas, axis=1)
 
+    # helper function to remove a token from a list of tokens
     def remove_from_list(self, list_tmp, to_remove = ''): # list_tmp = list(list())
         return [list(filter(lambda t: t != to_remove, ilist)) for ilist in list_tmp]
 
+    # helper function to remove 'pad', '!', 'E' characters
     def remove_schar(self, list_tmp): # remove 'pad', '!', 'E' characters
         list_tmp = self.remove_from_list(list_tmp, 'pad')
         list_tmp = self.remove_from_list(list_tmp, '!')
         list_tmp = self.remove_from_list(list_tmp, 'E')
         return list_tmp
 
+    # helper function to join tokens
     def join_tokens(self, list_tmp): 
         list_tmp = [''.join(ismiles) for ismiles in list_tmp]
         return list_tmp
         
+    ## CxUxN score evaluation
     def evaluation(self, epoch):
         if epoch >= self.warm_up:
             start_time = time.time()
@@ -487,7 +501,10 @@ class CxUxN(object):
             # Generate new SMILES
             while new_smiles_shape < self.n_generate:
                 # shape: (batch_size, vocab_size) 
-                prior = self.gen_model.predict(DataSequence(new_smiles_tmp, self.batch_size), 
+                prior = self.gen_model.predict(DataSequence(smiles=new_smiles_tmp, 
+                                                            extra=None,
+                                                            props=None,
+                                                            batch_size=self.batch_size), 
                                                max_queue_size = self.batch_size).astype('float64')
                 # extract a substitution to the prior
                 top_k = self.vocab_size
@@ -550,12 +567,13 @@ class CxUxN(object):
             self.uniq_list.append(uniqueness)
             self.novel_list.append(novelty)
             self.cun_list.append(cun_val)
-            time_range = time.time() - start_time
-            self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
-                                                                                                                                     new_smiles_shape, 
-                                                                                                                                     new_smiles_list_len, 
-                                                                                                                                     cun_val*100., 
-                                                                                                                                     time_range))
+            if verbose:
+                time_range = time.time() - start_time
+                self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
+                                                                                                                                        new_smiles_shape, 
+                                                                                                                                        new_smiles_list_len, 
+                                                                                                                                        cun_val*100., 
+                                                                                                                                        time_range))
             
     def on_evaluation_end(self):
         # Save best weights
