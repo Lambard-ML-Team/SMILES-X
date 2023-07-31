@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler
 from tensorflow.keras.models import load_model
 from tensorflow.keras import metrics
 from tensorflow.keras import backend as K
@@ -396,19 +396,6 @@ def generative_main(data_smiles,
             logging.error("")
             logging.error("*** SMILES-X EXECUTION ABORTED ***")
             raise utils.StopExecution
-        if k_fold_number is None:
-            # If the dataset is too small to transfer the number of kfolds
-            if model.k_fold_number > data.shape[0]:
-                k_fold_number = data.shape[0]
-                logging.info("The number of cross-validation folds (`k_fold_number`) is not defined.")
-                logging.info("Borrowing it from the pretrained model...")
-                logging.info("Number of folds `k_fold_number` is set to {}". format(k_fold_number))
-            else:
-                k_fold_number = model.k_fold_number
-                logging.info("The number of cross-validation folds (`k_fold_number`)")
-                logging.info("used for the pretrained model is too large to be used with current data:")
-                logging.info("size of the data is too small ({} > {})".format(model.k_fold_number, data.shape[0]))
-                logging.info("The number of folds is set to the length of the data ({})". format(k_fold_number))
         if n_runs is None:
             logging.info("The number of runs per fold (`n_runs`) is not defined.")
             logging.info("Borrowing it from the pretrained model...")
@@ -442,17 +429,6 @@ def generative_main(data_smiles,
     
     # Keep track of the fold number for every data point ???
     predictions.loc[test_idx, 'Fold'] = ifold
-
-    # Estimate remaining training duration based on the first fold duration ???
-    if nfold > 0:
-        if nfold == 1:
-            onefold_time = time.time() - start_time # First fold's duration
-        elif nfold < (k_fold_number - 1):
-            logging.info("Remaining time: {:.2f} h. Processing fold #{} of data..."\
-                            .format((k_fold_number - nfold) * onefold_time/3600., ifold))
-        elif nfold == (k_fold_number - 1):
-            logging.info("Remaining time: {:.2f} h. Processing the last fold of data..."\
-                            .format(onefold_time/3600.))
 
     # Check/augment the data if requested
     train_augm = augm.augmentation(data_smiles = data_smiles,
@@ -509,7 +485,9 @@ def generative_main(data_smiles,
     logging.info("")
 
     # Maximum of length of SMILES to process
-    max_length = np.max([len(ismiles) for ismiles in all_smiles_tokens])
+    all_smiles_tokens_len = [len(ismiles) for ismiles in all_smiles_tokens]
+    max_length = np.max(all_smiles_tokens_len)
+    median_length = np.median(all_smiles_tokens_len)
     logging.info("Maximum length of tokenized SMILES: {} tokens (termination spaces included)".format(max_length))
     logging.info("")
 
@@ -554,14 +532,22 @@ def generative_main(data_smiles,
     logging.info("*** TRAINING ***")
     logging.info("")
 
-    start_train = time.time()
-
     prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
     prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
     prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
     
     for run in range(n_runs):
-        start_run = time.time()
+
+        # Estimate remaining training duration based on the first run duration
+        if run > 0:
+            if run == 1:
+                onerun_time = time.time() - start_time # First run's duration
+            elif run < (n_runs - 1):
+                logging.info("Remaining time: {:.2f} h. Processing run #{} of data..."\
+                                .format((n_runs - run) * onerun_time/3600., run))
+            elif run == (n_runs - 1):
+                logging.info("Remaining time: {:.2f} h. Processing the last run of data..."\
+                                .format(onerun_time/3600.))
 
         # In case only some of the runs are requested for training
         if run_index is not None:
@@ -572,7 +558,7 @@ def generative_main(data_smiles,
         logging.info(time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()))
 
         # Checkpoint, Early stopping and callbacks definition
-        filepath = '{}/{}_Model_Fold_{}_Run_{}.hdf5'.format(model_dir, data_name, ifold, run)
+        filepath = '{}/{}_Model_Run_{}.hdf5'.format(model_dir, data_name, run)
             
         if train_mode == 'off' or os.path.exists(filepath):
             logging.info("Training was set to `off`.")
@@ -583,16 +569,18 @@ def generative_main(data_smiles,
             K.clear_session()
             # Freeze the first half of the network in case of transfer learning
             if train_mode == 'finetune':
-                model_train = model.model_dic['Fold_{}'.format(ifold)][run]
-                # Freeze encoding layers
-                #TODO(Guillaume): Check if this is the best way to freeze the layers as layers' name may differ
-                for layer in mod.layers:
-                    if layer.name in ['embedding', 'bidirectional', 'time_distributed']:
-                        layer.trainable = False
-                if (nfold==0 and run==0):
-                    logging.info("Retrieved model summary:")
-                    model_train.summary(print_fn=logging.info)
-                    logging.info("")
+                # model_train = model.model_dic['Fold_{}'.format(ifold)][run]
+                # # Freeze encoding layers
+                # #TODO(Guillaume): Check if this is the best way to freeze the layers as layers' name may differ
+                # for layer in mod.layers:
+                #     if layer.name in ['embedding', 'bidirectional', 'time_distributed']:
+                #         layer.trainable = False
+                # if run==0:
+                #     logging.info("Retrieved model summary:")
+                #     model_train.summary(print_fn=logging.info)
+                #     logging.info("")
+                logging.info("Fine-tuning a pretrained model isn't implemented yet.")
+                return
             elif (train_mode == 'train' or train_mode == 'on'):
                 with strategy.scope():
                     model_train = model.LSTMAttModel.create(input_tokens=max_length+1,
@@ -606,142 +594,83 @@ def generative_main(data_smiles,
                                                             output_n_nodes=n_class)
                     custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
                     model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
-                if (nfold==0 and run==0):
+                if run==0:
                     logging.info("Model summary:")
                     model_train.summary(print_fn=logging.info)
                     logging.info("\n")
 
             batch_size = hyper_opt["Batch size"]
-            if bs_increase:
-                # Apply batch increments schedule in accordance with the paper by S.Smith, Q.Le,
-                # "Don't decay the learning rate, increase the batch size"
-                # https://arxiv.org/abs/1711.00489
-                logging.info("Batch size increment option is selected,")
-                logging.info("learning rate schedule will NOT be applied.")
-                logging.info("")
-                if ignore_first_epochs >= n_epochs:
-                    logging.info("The number of epochs to be ignored, `ignore_first_epochs`,")
-                    logging.info("should be strictly less than the total number of epochs to train, `n_epochs`.")
-                    raise utils.StopExecution
+            if batchsize_pergpu is None:
+                batch_size_list = np.array([int(2**itn) for itn in range(3,11)])
+                batchsize_pergpu = batch_size_list[np.argmax((batch_size_list // median_length) == 1.)]
+            batch_size = batchsize_pergpu * strategy.num_replicas_in_sync
+            batchsize_pergpu = batch_size // strategy.num_replicas_in_sync
+            logging.info("Total fixed batch size: {} ({} / gpu)\n".format(batch_size, batchsize_pergpu))
+            logging.info("")
 
-                # Setting up the batch size schedule
-                # Increment batch twofold every 1/3 of the total of epochs (heuristic)
-                batch_size_schedule = [int(batch_size), int(batch_size*2), int(batch_size*4)]
-                n_epochs_schedule = [int(n_epochs/3), int(n_epochs/3), n_epochs - 2*int(n_epochs/3)]
+            # ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
+            #                                                      n_epochs=n_epochs,
+            #                                                      best_loss=np.Inf,
+            #                                                      initial_epoch=0,
+            #                                                      ignore_first_epochs=ignore_first_epochs)
+            logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
+            
+            filepath_tmp = '{}/{}_Model_Run_{}_Epoch_{epoch:02d}.hdf5'.format(model_dir, data_name, run)
+            checkpoint = ModelCheckpoint(filepath_tmp, 
+                                         monitor='loss', 
+                                         verbose=0, 
+                                         save_best_only=False, 
+                                         mode='min')
 
-                # Fit the model applying the batch size schedule:
+            earlystopping = EarlyStopping(monitor='loss', 
+                                          min_delta=0, 
+                                          patience=patience, 
+                                          verbose=0, 
+                                          mode='min')
+            # Default callback list
+            #callbacks_list = [ignorebeginning, logcallback]
+            callbacks_list = [checkpoint, earlystopping, logcallback]
+            # Additional callbacks
+            if lr_schedule == 'decay':
+                schedule = trainutils.StepDecay(initAlpha=lr_max,
+                                                finalAlpha=lr_min,
+                                                gamma=0.95,
+                                                epochs=n_epochs)
+                callbacks_list.append(LearningRateScheduler(schedule))
+            elif lr_schedule == 'clr':
+                clr = trainutils.CyclicLR(base_lr=lr_min,
+                                          max_lr=lr_max,
+                                          step_size=8*(x_train_enum_tokens_tointvec.shape[0] // batchsize_pergpu),
+                                          mode='triangular')
+                callbacks_list.append(clr)
+            elif lr_schedule == 'cosine':
+                cosine_anneal = trainutils.CosineAnneal(initial_learning_rate=lr_max,
+                                                        final_learning_rate=lr_min,
+                                                        epochs=n_epochs)
+                callbacks_list.append(cosine_anneal)
 
-                # Keeping track of history
-                # During BS increments model is trained 3 times, histories should be stitched manually
-                history_train_loss = []
-                history_val_loss = []
-
-                # Define callbacks
-                n_epochs_done = 0
-                best_loss = np.Inf
-                best_epoch = 0
-                logging.info("Training:")
-                for i, batch_size in enumerate(batch_size_schedule):
-                    if i == (len(batch_size_schedule) - 1):
-                        last = True
-                    else:
-                        last = False
-                    n_epochs_part = n_epochs_schedule[i]
-                    # Ignores noise fluctuations of the beginning of the training
-                    # Avoids picking up undertrained model
-                    # TODO: add early stopping to ignorebeginning
-                    ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
-                                                                            n_epochs=n_epochs_part,
-                                                                            best_loss=best_loss,
-                                                                            best_epoch=best_epoch,
-                                                                            initial_epoch=n_epochs_done,
-                                                                            ignore_first_epochs=ignore_first_epochs,
-                                                                            last=last)
-                    logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
-                    # Default callback list
-                    callbacks_list = [ignorebeginning, logcallback]
-                    with strategy.scope():
-                        if i == 0:
-                            logging.info("The batch size is initialized at {}".format(batch_size))
-                            logging.info("")
-                        else:
-                            logging.info("")
-                            logging.info("The batch size is changed to {}".format(batch_size))
-                            logging.info("")
-                        history = model_train.fit(\
-                                    trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
-                                                            extra=None,
-                                                            props=y_train_enum,
-                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
-                                    validation_data = \
-                                    trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
-                                                            extra=None,
-                                                            props=y_valid_enum,
-                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
-                                    shuffle=True,
-                                    initial_epoch=n_epochs_done,
-                                    epochs=n_epochs_done + n_epochs_part,
-                                    callbacks=callbacks_list,
-                                    verbose=train_verbose,
-                                    max_queue_size=batch_size,
-                                    use_multiprocessing=False,
-                                    workers=1)
-                    history_train_loss += history.history['loss']
-                    history_val_loss += history.history['val_loss']
-                    best_loss = ignorebeginning.best_loss
-                    best_epoch = ignorebeginning.best_epoch
-                    n_epochs_done += n_epochs_part
-            else:
-                ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
-                                                                        n_epochs=n_epochs,
-                                                                        best_loss=np.Inf,
-                                                                        initial_epoch=0,
-                                                                        ignore_first_epochs=ignore_first_epochs)
-                logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
-                # Default callback list
-                callbacks_list = [ignorebeginning, logcallback]
-                # Additional callbacks
-                if lr_schedule == 'decay':
-                    schedule = trainutils.StepDecay(initAlpha=lr_max,
-                                                    finalAlpha=lr_min,
-                                                    gamma=0.95,
-                                                    epochs=n_epochs)
-                    callbacks_list.append(LearningRateScheduler(schedule))
-                elif lr_schedule == 'clr':
-                    clr = trainutils.CyclicLR(base_lr=lr_min,
-                                                max_lr=lr_max,
-                                                step_size=8*(x_train_enum_tokens_tointvec.shape[0] // \
-                                                            (batch_size//strategy.num_replicas_in_sync)),
-                                                mode='triangular')
-                    callbacks_list.append(clr)
-                elif lr_schedule == 'cosine':
-                    cosine_anneal = trainutils.CosineAnneal(initial_learning_rate=lr_max,
-                                                            final_learning_rate=lr_min,
-                                                            epochs=n_epochs)
-                    callbacks_list.append(cosine_anneal)
-
-                # Fit the model
-                with strategy.scope():
-                    history = model_train.fit(\
-                                    trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
-                                                            extra=None,
-                                                            props=y_train_enum,
-                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
-                                    validation_data = \
-                                    trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
-                                                            extra=None,
-                                                            props=y_valid_enum,
-                                                            batch_size=batch_size * strategy.num_replicas_in_sync),
-                                    shuffle=True,
-                                    initial_epoch=0,
-                                    epochs=n_epochs,
-                                    callbacks=callbacks_list,
-                                    verbose=train_verbose,
-                                    max_queue_size=batch_size,
-                                    use_multiprocessing=False,
-                                    workers=1)
-                history_train_loss = history.history['loss']
-                history_val_loss = history.history['val_loss']
+            # Fit the model
+            with strategy.scope():
+                history = model_train.fit(\
+                                trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
+                                                        extra=None,
+                                                        props=y_train_enum,
+                                                        batch_size=batch_size * strategy.num_replicas_in_sync),
+                                validation_data = \
+                                trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
+                                                        extra=None,
+                                                        props=y_valid_enum,
+                                                        batch_size=batch_size * strategy.num_replicas_in_sync),
+                                shuffle=True,
+                                initial_epoch=0,
+                                epochs=n_epochs,
+                                callbacks=callbacks_list,
+                                verbose=train_verbose,
+                                max_queue_size=batch_size,
+                                use_multiprocessing=False,
+                                workers=1)
+            history_train_loss = history.history['loss']
+            history_val_loss = history.history['val_loss']
 
             # Summarize history for losses per epoch
             visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
