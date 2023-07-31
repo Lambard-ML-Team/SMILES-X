@@ -274,8 +274,10 @@ def generative_main(data_smiles,
 
     # Define and create output directories
     if train_mode=='finetune':
+        main_save_dir = '{}/{}/{}/Transfer'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
         save_dir = '{}/{}/{}/{}/Transfer'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
     else:
+        main_save_dir = '{}/{}/{}/Train'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
         save_dir = '{}/{}/{}/{}/Train'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
     model_dir = save_dir + '/Models'
     pred_plot_run_dir = save_dir + '/Figures/Pred_vs_True/Runs'
@@ -478,10 +480,13 @@ def generative_main(data_smiles,
     all_smiles_tokens = x_train_enum_tokens
 
     # Check if the vocabulary for current dataset exists already
-    vocab_file = '{}/Other/{}_Vocabulary.txt'.format(save_dir, data_name)
+    vocab_file = '{}/Other/{}_Vocabulary.txt'.format(main_save_dir, data_name)
     if os.path.exists(vocab_file):
         tokens = token.get_vocab(vocab_file)
     else:
+        logging.info("No vocabulary file found for the current dataset.")
+        logging.info("Extracting the vocabulary from the current dataset...")
+        logging.info("")
         tokens = token.extract_vocab(all_smiles_tokens)
         token.save_vocab(tokens, vocab_file)
         tokens = token.get_vocab(vocab_file)
@@ -508,123 +513,52 @@ def generative_main(data_smiles,
     logging.info("Maximum length of tokenized SMILES: {} tokens (termination spaces included)".format(max_length))
     logging.info("")
 
-    # predict and compare for the training, validation and test sets
+    # Convert tokenized SMILES to integer vectors
     x_train_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_train_enum_tokens,
                                                         max_length=max_length + 1,
                                                         vocab=tokens)
                                                         
-    # Hyperparameters optimisation
-    logging.info("*** HYPERPARAMETERS OPTIMISATION ***")
+    # Hyperparameters retrieval from the geometry optimisation
+    logging.info("*** HYPERPARAMETERS RETRIEVAL ***")
     logging.info("")
 
     # Dictionary to store optimized hyperparameters
     # Initialize at reference values, update gradually
     hyper_opt = {'Embedding': embed_ref,
-                    'LSTM': lstm_ref,
-                    'TD dense': tdense_ref,
-                    'Batch size': bs_ref,
-                    'Learning rate': lr_ref}
-    hyper_bounds = {'Embedding': embed_bounds,
-                    'LSTM': lstm_bounds,
-                    'TD dense': tdense_bounds,
-                    'Batch size': bs_bounds,
-                    'Learning rate': lr_bounds}
-    
-    # Geometry optimisation
-    if geomopt_mode == 'on':
-        geom_file = '{}/Other/{}_GeomScores.csv'.format(save_dir, data_name)
-        # Do not optimize the architecture in case of transfer learning
-        if train_mode=='finetune':
-            logging.info("Transfer learning is requested together with geometry optimisation,")
-            logging.info("but the architecture is already fixed in the original model.")
-            logging.info("Only batch size and learning rate can be tuned.")
-            logging.info("Skipping geometry optimisation...")
-            logging.info("")
-        else:
-            hyper_opt, hyper_bounds = \
-            geomopt.geom_search(data_token=x_train_enum_tokens_tointvec,
-                                data_extra=None,
-                                subsample_size=geom_sample_size,
-                                hyper_bounds=hyper_bounds,
-                                hyper_opt=hyper_opt,
-                                dense_depth=dense_depth,
-                                vocab_size=len(tokens),
-                                max_length=max_length,
-                                geom_file=geom_file,
-                                strategy=strategy, 
-                                model_type='regression') # model_type for regression is by default fitted to the geom_search function
+                 'LSTM': lstm_ref,
+                 'TD dense': tdense_ref,
+                 'Batch size': bs_ref,
+                 'Learning rate': lr_ref}
+    hyper_opt_file = '{}/Other/{}_Hyperparameters.csv'.format(main_save_dir, data_name)
+    if os.path.exists(hyper_opt_file):
+        hyper_opt_df = pd.read_csv(hyper_opt_file)
+        hyper_opt = hyper_opt_df.iloc[0].to_dict()
+        logging.info("File containing the list of optimised hyperparameters:")
+        logging.info("    {}".format(hyper_opt_file))
+        logging.info("")
+        logging.info("The following hyperparameters will be used for training:")
+        for key in hyper_opt.keys():
+            if key == "Learning rate":
+                logging.info("    - {}: 10^-{}".format(key, hyper_opt[key]))
+            else:
+                logging.info("    - {}: {}".format(key, hyper_opt[key]))
+        logging.info("")
     else:
-        logging.info("Trainless geometry optimisation is not requested.")
+        logging.info("No geometry optimisation file found for the current dataset.")
+        logging.info("Using reference values for hyperparameters.")
         logging.info("")
 
-        # Bayesian optimisationmodel_type
-    if bayopt_mode == 'on':
-        if geomopt_mode == 'on':
-            logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
-            logging.info("")
-            if not any([bs_bounds, lr_bounds]):
-                logging.info("Batch size bounds and learning rate bounds are not defined.")
-                logging.info("Bayesian optimisation has no parameters to optimize.")
-                logging.info("Skipping...")
-                logging.info("")
-        hyper_opt = bayopt.bayopt_run(smiles=data_smiles,
-                                      # prop=data_prop, ???
-                                      extra=None,
-                                      train_val_idx=train_val_idx,
-                                      smiles_concat=smiles_concat,
-                                      tokens=tokens,
-                                      max_length=max_length,
-                                      check_smiles=check_smiles,
-                                      augmentation=augmentation,
-                                      hyper_bounds=hyper_bounds,
-                                      hyper_opt=hyper_opt,
-                                      dense_depth=dense_depth,
-                                      bo_rounds=bayopt_n_rounds,
-                                      bo_epochs=bayopt_n_epochs,
-                                      bo_runs=bayopt_n_runs,
-                                      strategy=strategy,
-                                      model_type=model_type, 
-                                      output_n_nodes=n_class, 
-                                      scale_output=scale_output, 
-                                      pretrained_model=pretrained_model)
-    else:
-        logging.info("Bayesian optimisation is not requested.")
-        logging.info("")
-        if geomopt == 'off':
-            logging.info("Using reference values for training.")
-            logging.info("")
-
-    hyper_df = pd.DataFrame([hyper_opt.values()], columns = hyper_opt.keys())
-    hyper_file = "{}/Other/{}_Hyperparameters.csv".format(save_dir, data_name)
-    hyper_df.to_csv(hyper_file, index=False)
-
-    logging.info("*** HYPERPARAMETERS OPTIMISATION COMPLETED ***")
+    logging.info("*** HYPERPARAMETERS RETRIEVAL COMPLETED ***")
     logging.info("")
     
-    logging.info("The following hyperparameters will be used for training:")
-    for key in hyper_opt.keys():
-        if key == "Learning rate":
-            logging.info("    - {}: 10^-{}".format(key, hyper_opt[key]))
-        else:
-            logging.info("    - {}: {}".format(key, hyper_opt[key]))
-    logging.info("")
-    logging.info("File containing the list of used hyperparameters:")
-    logging.info("    {}".format(hyper_file))
-    logging.info("")
-
     logging.info("*** TRAINING ***")
     logging.info("")
 
     start_train = time.time()
 
-    if model_type != 'multiclass_classification':
-        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_runs))
-        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_runs))
-        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_runs))
-    else:
-        prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
-        prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
-        prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
+    prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
+    prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
+    prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
     
     for run in range(n_runs):
         start_run = time.time()
