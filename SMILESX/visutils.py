@@ -80,7 +80,7 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 ##
 
 # Metric curve plotting for LM
-def lm_metric_curve(train_metric, imetrics, imetrics_p, save_dir: str, data_name: str, run: int, model_type: str) -> None:
+def lm_metric_curve(train_metric, imetrics, imetrics_p, save_dir: str, data_name: str, run: int) -> None:
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 

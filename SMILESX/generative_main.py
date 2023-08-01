@@ -669,22 +669,38 @@ def generative_main(data_smiles,
 
             # Summarize history for losses per epoch
             metrics_list = [m for m in history.history.keys() if not m.startswith("val_") and m != 'lr']
-            pname = 'loss'
             for imetrics in metrics_list[:-1]:
                 history_train_loss_tmp = history.history[imetrics]
                 if imetrics == 'loss':
                     visutils.learning_curve(history_train_loss_tmp, None, lcurve_dir, data_name, None, run, model_type)
                 else:
                     imetrics_p = metrics_list[-1]
-                    plt.plot(history.history[imetrics_p])
-                    plt.legend([imetrics.replace('_accuracy',''), imetrics_p.replace('_accuracy','')], loc='lower right')
-                    plt.ylabel('Accuracy')
-                    pname = 'accuracy'
+                    history_train_metric_tmp = history.history[imetrics_p]
+                    visutils.lm_metric_curve(history_train_metric_tmp, imetrics, imetrics_p, lcurve_dir, data_name, run)
 
             logging.info("\nBest loss @ Epoch #{}\n".format(np.argmin(history.history['loss'])))
-
-            logging.info("Evaluating performance of the trained model...")
             logging.info("")
+
+            logging.info("***CxUxN scores history during the training.***\n")
+            cun_metric = utils.CxUxN(init_data = data_smiles.tolist(), 
+                                     data_name = data_name, 
+                                     vocab_path = vocab_dir+'Vocabulary.txt', 
+                                     gen_max_length = max_length+1, 
+                                     gpus = gpus,
+                                     model_init = model_train, 
+                                     n_generate = 1000,
+                                     warm_up = 0, 
+                                     batch_size = 8096, 
+                                     print_fcn = logging.info, 
+                                     save_dir = save_dir)
+            evaluated_epochs_list = glob.glob(save_dir + "*.hdf5")
+            for iepoch in range(len(evaluated_epochs_list)):
+                cun_metric.evaluation(iepoch)
+            cun_metric.on_evaluation_end()
+            logging.info("")
+
+        logging.info("Evaluating performance of the trained model...")
+        logging.info("")
 
         with tf.device(gpus[0].name):
             K.clear_session()
