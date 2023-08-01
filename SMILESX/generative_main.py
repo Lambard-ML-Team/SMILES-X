@@ -447,6 +447,8 @@ def generative_main(data_smiles,
 
     # Tokenize SMILES per dataset
     x_train_enum_tokens = token.get_tokens(x_train_enum)
+    x_train_enum_tokens_len = [len(ismiles) for ismiles in x_train_enum_tokens]
+    x_train_enum_tokens_hash = [(ic, itoken, ilen-1) for ic, ilen in enumerate(x_train_enum_tokens_len) for itoken in range(1,ilen)]
 
     logging.info("Examples of tokenized SMILES from a training set:")
     logging.info("{}".format(x_train_enum_tokens[:5]))

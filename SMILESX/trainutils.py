@@ -362,6 +362,93 @@ class IgnoreBeginningSaveBest(Callback):
                              .format(self.filepath))
 ##
 
+def seq_trunc(hash_set, smiles_set, max_length, vocab_size):   
+    '''
+    To sequentially produce truncated SMILES of one token
+
+    Parameters
+    ----------
+    hash_set: array of arrays of dimensions (3, number_of_SMILES)
+    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
+    max_length: maximum length of the SMILES
+    vocab_size: size of the vocabulary
+
+    Returns
+    -------
+    Two arrays:
+            - Truncated SMILES
+            - One-hot vectored truncated token
+    '''
+
+    batch_smiles = hash_set[0].tolist()
+    batch_sampling = hash_set[1].tolist()
+    batch_weight = hash_set[2].tolist()
+    
+    batch_x_list = list()
+    batch_y_list = list()
+    batch_w_list = list()
+    for ismiles, icut, iw in zip(batch_smiles, batch_sampling, batch_weight):
+        smiles_tmp = smiles_set[ismiles]
+        batch_x_list.append(smiles_tmp[:icut])
+        batch_y_list.append([smiles_tmp[icut]])
+        batch_w_list.append(1./float(iw))
+    batch_x = pad_sequences(batch_x_list, maxlen = max_length, dtype = 'int16', padding = 'pre', value=0)
+    batch_y = np.ndarray.astype(np.array(batch_y_list), dtype = 'int16')
+    batch_y = token.onehot(batch_y, vocab_size)
+    batch_w = np.array(batch_w_list)
+        
+    return batch_x, batch_y, batch_w
+##
+
+class LM_DataSequence(Sequence):
+    '''
+    Data sequence to be fed to the neural network during training through batches of data
+
+    Parameters
+    ----------
+    hash_set: array of arrays of dimensions (3, number_of_SMILES)
+    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
+    vocab_size: size of the vocabulary
+    max_length: maximum length of the SMILES
+    batch_size: batch's size
+    training: set up the training mode (Default: True)
+
+    Returns
+    -------
+    In training mode, returns:
+            a batch of arrays of tokenized and encoded SMILES,
+            a batch of SMILES property
+    else, returns:
+            a batch of arrays of tokenized and encoded SMILES alone
+
+    '''
+
+    def __init__(self, hash_set, smiles_set, vocab_size, max_length, batch_size, training = True):
+        self.hash_set = hash_set
+        self.smiles_set = smiles_set
+        self.vocab_size = vocab_size
+        self.max_length = max_length
+        self.batch_size = batch_size
+        self.training = training
+        self.hash_shuffled_array = np.transpose(np.array(random.sample(self.hash_set, len(self.hash_set))))
+        self.iepoch = 0
+
+    def on_epoch_end(self):
+        self.hash_shuffled_array = np.transpose(np.array(random.sample(self.hash_set, len(self.hash_set))))
+        self.iepoch += 1
+        
+    def __len__(self):
+        return int(np.ceil(len(self.hash_set) / float(self.batch_size)))
+    
+    def __getitem__(self, idx):
+        batch_hashes = self.hash_shuffled_array[:,idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x, batch_y, batch_w = seq_trunc(batch_hashes, self.smiles_set, self.max_length, self.vocab_size)
+        if self.training:
+            return batch_x, batch_y, batch_w
+        else:
+            return batch_x
+##
+
 ## Custom metric 
 class CxUxN(object):
     """Implement CxUxN score calculation during training
