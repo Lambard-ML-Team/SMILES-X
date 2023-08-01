@@ -709,7 +709,8 @@ def generative_main(data_smiles,
         with tf.device(gpus[0].name):
             K.clear_session()
             model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
-            
+            model_train.compile(loss = model_loss, optimizer=Adam(), metrics=model_metrics)
+
             model_eval = model_train.evaluate(LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
                                                               smiles_set = x_train_enum_tokens_tointvec, 
                                                               vocab_size = len(tokens), 
