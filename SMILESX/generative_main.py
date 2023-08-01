@@ -280,9 +280,9 @@ def generative_main(data_smiles,
         main_save_dir = '{}/{}/{}/Train'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
         save_dir = '{}/{}/{}/{}/Train'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
     model_dir = save_dir + '/Models'
-    pred_plot_run_dir = save_dir + '/Figures/Pred_vs_True/Runs'
+    res_plot_run_dir = save_dir + '/Figures/Results/Runs'
     lcurve_dir = save_dir + '/Figures/Learning_Curves'
-    create_dirs = [model_dir, pred_plot_run_dir, lcurve_dir]
+    create_dirs = [model_dir, res_plot_run_dir, lcurve_dir]
     for create_dir in create_dirs:
         if not os.path.exists(create_dir):
             os.makedirs(create_dir)
@@ -562,7 +562,7 @@ def generative_main(data_smiles,
         logging.info(time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()))
 
         # Checkpoint, Early stopping and callbacks definition
-        filepath = '{}/{}_Model_Run_{}.hdf5'.format(model_dir, data_name, run)
+        filepath = '{}/{}_Model_Run_{}_Best_Epoch.hdf5'.format(model_dir, data_name, run)
             
         if train_mode == 'off' or os.path.exists(filepath):
             logging.info("Training was set to `off`.")
@@ -684,7 +684,7 @@ def generative_main(data_smiles,
             logging.info("***CxUxN scores history during the training.***\n")
             cun_metric = utils.CxUxN(init_data = data_smiles.tolist(), 
                                      data_name = data_name, 
-                                     vocab_path = vocab_dir+'Vocabulary.txt', 
+                                     vocab_path = vocab_file, 
                                      gen_max_length = max_length+1, 
                                      gpus = gpus,
                                      model_init = model_train, 
@@ -692,8 +692,11 @@ def generative_main(data_smiles,
                                      warm_up = 0, 
                                      batch_size = 8096, 
                                      print_fcn = logging.info, 
-                                     save_dir = save_dir)
-            evaluated_epochs_list = glob.glob(save_dir + "*.hdf5")
+                                     model_dir = model_dir, 
+                                     run = run, 
+                                     results_dir = res_plot_run_dir)
+            filepath_tmp_trunc = '{}/{}_Model_Run_{}_Epoch_*.hdf5'.format(model_dir, data_name, run)
+            evaluated_epochs_list = glob.glob(filepath_tmp_trunc)
             for iepoch in range(len(evaluated_epochs_list)):
                 cun_metric.evaluation(iepoch)
             cun_metric.on_evaluation_end()

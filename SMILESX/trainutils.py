@@ -8,6 +8,7 @@ import logging
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import Callback
 
 import shutil
@@ -21,6 +22,8 @@ logger.setLevel(rkl.ERROR)
 rkrb.DisableLog('rdApp.error')
 
 from SMILESX import token, model
+
+import random
 
 np.random.seed(seed=123)
 np.set_printoptions(precision=3)
@@ -475,22 +478,21 @@ class CxUxN(object):
         Batch size
     print_fcn: function
         Function to use for printing
-    save_dir: str
+    model_dir: str
         Path to the directory where the model is saved.
+    run: int
+        Number of the run
+    results_dir: str
+        Path to the directory where the results are saved.
     verbose: bool
         Whether to print the evaluation of a generation
 
     Returns
     -------
-    A tuple containing a batch of input SMILES, extra data and property values.
-    The inputs (SMILES, extra) are of a dictionary shape in accordance with Keras format.
-
-    Examples:
-        {"smiles": batch_smiles, "extra": batch_extra}, batch_prop - when extra data is provided
-        {"smiles": batch_smiles}, batch_prop - when no extra data is provided
+    Evaluation of the generation through the CUN score
     """
     
-    def __init__(self, init_data, data_name, vocab, gen_max_length, gpus, model_init, n_generate = 1000, warm_up = 0, batch_size = 128, print_fcn = print, save_dir = None, verbose = False):
+    def __init__(self, init_data, data_name, vocab, gen_max_length, gpus, model_init, n_generate = 1000, warm_up = 0, batch_size = 128, print_fcn = print, model_dir = None, run = 0, results_dir = None, verbose = False):
         self.init_data_set = set(init_data)
         self.data_name = data_name
         self.gen_tokens = vocab
@@ -501,7 +503,9 @@ class CxUxN(object):
         self.warm_up = warm_up
         self.batch_size = batch_size
         self.print_fcn = print_fcn
-        self.save_dir = save_dir
+        self.model_dir = model_dir
+        self.run = run
+        self.results_dir = results_dir
         
         # tokens to integers and vice versa
         self.vocab_size = len(self.gen_tokens)
@@ -574,7 +578,7 @@ class CxUxN(object):
         if epoch >= self.warm_up:
             start_time = time.time()
 
-            self.gen_model.load_weights(self.save_dir+'LSTMAtt_'+self.data_name+'_model_epoch{:02d}.hdf5'.format(epoch+1))
+            self.gen_model.load_weights('{}/{}_Model_Run_{}_Epoch_{:02d}.hdf5'.format(self.model_dir, self.data_name, self.run, epoch+1))
 
             # array of temporary new SMILES
             starter_row = np.array([self.pad_token_int]*(self.gen_max_length-1)+[self.pre_token_int])
@@ -657,18 +661,18 @@ class CxUxN(object):
             if verbose:
                 time_range = time.time() - start_time
                 self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
-                                                                                                                                        new_smiles_shape, 
-                                                                                                                                        new_smiles_list_len, 
-                                                                                                                                        cun_val*100., 
-                                                                                                                                        time_range))
+                                                                                                                                         new_smiles_shape, 
+                                                                                                                                         new_smiles_list_len, 
+                                                                                                                                         cun_val*100., 
+                                                                                                                                         time_range))
             
     def on_evaluation_end(self):
         # Save best weights
-        shutil.copy(self.save_dir+'LSTMAtt_'+self.data_name+'_model_epoch{:02d}.hdf5'.format(self.best_epoch+1), 
-                    self.save_dir+'LSTMAtt_'+self.data_name+'_model_best.hdf5')
+        shutil.copy('{}/{}_Model_Run_{}_Epoch_{:02d}.hdf5'.format(self.model_dir, self.data_name, self.run, self.best_epoch+1), 
+                    '{}/{}_Model_Run_{}_Best_Epoch.hdf5'.format(self.model_dir, self.data_name, self.run))
         self.print_fcn("\nBest CxUxN score @ Epoch #{}\n".format(self.best_epoch))
         # plot scores history
-        if self.save_dir is not None:
+        if self.model_dir is not None:
             plt.plot(self.cor_list)
             plt.plot(self.uniq_list)
             plt.plot(self.novel_list)
@@ -677,6 +681,6 @@ class CxUxN(object):
             plt.ylabel('Score')
             plt.title('')
             plt.xlabel('Epoch')
-            plt.savefig(self.save_dir+'History_CxUxN_score_LSTMAtt_'+self.data_name+'_model.png', bbox_inches='tight')
+            plt.savefig('{}/{}_Model_Run_{}_History_CxUxN_score.png', bbox_inches='tight'.format(self.results_dir, self.data_name, self.run))
             plt.close()
 ##
