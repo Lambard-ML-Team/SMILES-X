@@ -68,13 +68,61 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
                    labelright=True,
                    left=True,
                    labelleft=True)
-    ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
     if ifold is not None: 
+    ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
     plt.savefig('{}/{}_LearningCurve_Fold_{}_Run_{}.png'\
                 .format(save_dir, data_name, ifold, run), bbox_inches='tight')
     else:
+        ax.legend(['Train'], loc='upper right', fontsize=14)
         plt.savefig('{}/{}_LearningCurve_Run_{}.png'\
                 .format(save_dir, data_name, run), bbox_inches='tight')
+    plt.close()
+##
+
+# Metric curve plotting for LM
+def lm_metric_curve(train_metric, imetrics, imetrics_p, save_dir: str, data_name: str, run: int, model_type: str) -> None:
+
+    fig = plt.figure(figsize=(6.75, 5), dpi=200)
+
+    ax = fig.add_subplot(111)
+
+    ax.set_ylim(min(train_metric)-0.05, max(train_metric)+0.05)
+
+    plt.ylabel('Accuracy', fontsize=18)
+    plt.xlabel('Epoch', fontsize=18)
+    
+    ax.plot(train_metric, color='#3783ad')
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(14)
+
+    ax.tick_params(bottom=True, top=True, left=True, right=True)
+    ax.tick_params(axis="x", direction="inout")
+    ax.tick_params(axis="y", direction="inout")
+
+    # Ticks decoration
+    ax.xaxis.set_minor_locator(AutoMinorLocator())
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
+
+    ax.tick_params(axis="x",
+                   which="minor",
+                   direction="out",
+                   top=True,
+                   labeltop=True,
+                   bottom=True,
+                   labelbottom=True)
+
+    ax.tick_params(axis="y",
+                   which="minor",
+                   direction="out",
+                   right=True,
+                   labelright=True,
+                   left=True,
+                   labelleft=True)
+    
+    ax.legend([imetrics.replace('_accuracy',''), imetrics_p.replace('_accuracy','')], loc='lower right', fontsize=14)
+    plt.savefig('{}/{}_MetricCurve_Run_{}.png'\
+            .format(save_dir, data_name, run), bbox_inches='tight')
     plt.close()
 ##
 

@@ -667,11 +667,21 @@ def generative_main(data_smiles,
                                 verbose=train_verbose,
                                 max_queue_size=batch_size)
 
-            history_train_loss = history.history['loss']
-            history_val_loss = history.history['val_loss']
-
             # Summarize history for losses per epoch
-            visutils.learning_curve(history_train_loss, history_val_loss, lcurve_dir, data_name, ifold, run, model_type)
+            metrics_list = [m for m in history.history.keys() if not m.startswith("val_") and m != 'lr']
+            pname = 'loss'
+            for imetrics in metrics_list[:-1]:
+                history_train_loss_tmp = history.history[imetrics]
+                if imetrics == 'loss':
+                    visutils.learning_curve(history_train_loss_tmp, None, lcurve_dir, data_name, None, run, model_type)
+                else:
+                    imetrics_p = metrics_list[-1]
+                    plt.plot(history.history[imetrics_p])
+                    plt.legend([imetrics.replace('_accuracy',''), imetrics_p.replace('_accuracy','')], loc='lower right')
+                    plt.ylabel('Accuracy')
+                    pname = 'accuracy'
+
+            logging.info("\nBest loss @ Epoch #{}\n".format(np.argmin(history.history['loss'])))
 
             logging.info("Evaluating performance of the trained model...")
             logging.info("")
