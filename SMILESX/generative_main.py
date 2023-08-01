@@ -541,7 +541,8 @@ def generative_main(data_smiles,
     prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
     
     for run in range(n_runs):
-
+        start_run = time.time()
+        
         # Estimate remaining training duration based on the first run duration
         if run > 0:
             if run == 1:
@@ -709,183 +710,25 @@ def generative_main(data_smiles,
             K.clear_session()
             model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
             
-            y_pred_train = model_train.predict({"smiles": x_train_enum_tokens_tointvec})
-            y_pred_valid = model_train.predict({"smiles": x_valid_enum_tokens_tointvec})
-            y_pred_test = model_train.predict({"smiles": x_test_enum_tokens_tointvec})
+            model_eval = model_train.evaluate(LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
+                                                              smiles_set = x_train_enum_tokens_tointvec, 
+                                                              vocab_size = len(tokens), 
+                                                              max_length = max_length+1, 
+                                                              batch_size = batchsize_pergpu), 
+                                              max_queue_size = batch_size, 
+                                              verbose = 0)
 
-        # Unscale prediction outcomes
-        if scale_output:
-            y_pred_train_unscaled = scaler.inverse_transform(y_pred_train.reshape(-1,1)).ravel()
-            y_pred_valid_unscaled = scaler.inverse_transform(y_pred_valid.reshape(-1,1)).ravel()
-            y_pred_test_unscaled = scaler.inverse_transform(y_pred_test.reshape(-1,1)).ravel()
-            
-            y_train_clean_unscaled = scaler.inverse_transform(y_train_clean.reshape(-1,1)).ravel()
-            y_valid_clean_unscaled = scaler.inverse_transform(y_valid_clean.reshape(-1,1)).ravel()
-            y_test_clean_unscaled = scaler.inverse_transform(y_test_clean.reshape(-1,1)).ravel()
-        else:
-            y_pred_train_unscaled = y_pred_train.ravel() if model_type != 'multiclass_classification' else y_pred_train
-            y_pred_valid_unscaled = y_pred_valid.ravel() if model_type != 'multiclass_classification' else y_pred_valid
-            y_pred_test_unscaled = y_pred_test.ravel() if model_type != 'multiclass_classification' else y_pred_test
-
-            y_train_clean_unscaled = y_train_clean.ravel()
-            y_valid_clean_unscaled = y_valid_clean.ravel()
-            y_test_clean_unscaled = y_test_clean.ravel()
-
-        if model_type != 'multiclass_classification':
-            prediction_train_bag[:, run] = y_pred_train_unscaled
-            prediction_valid_bag[:, run] = y_pred_valid_unscaled
-            prediction_test_bag[:, run]  = y_pred_test_unscaled
-        else:
-            prediction_train_bag[:,:, run] = y_pred_train_unscaled
-            prediction_valid_bag[:,:, run] = y_pred_valid_unscaled
-            prediction_test_bag[:,:, run]  = y_pred_test_unscaled
-
-        # Compute average per set of augmented SMILES for the plots per run
-        y_pred_train_mean_augm, y_pred_train_std_augm = utils.mean_result(x_train_enum_card, y_pred_train_unscaled, model_type)
-        y_pred_valid_mean_augm, y_pred_valid_std_augm = utils.mean_result(x_valid_enum_card, y_pred_valid_unscaled, model_type)
-        y_pred_test_mean_augm, y_pred_test_std_augm = utils.mean_result(x_test_enum_card, y_pred_test_unscaled, model_type)
-
-        # Print the stats for the run
-        visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                                preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
-                                errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
-                                prec=prec, 
-                                model_type=model_type, 
-                                labels = unique_classes)
-
-        # Plot prediction vs observation plots per run
-        visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                            preds=[y_pred_train_mean_augm, y_pred_valid_mean_augm, y_pred_test_mean_augm],
-                            errs_true=[y_err_train, y_err_valid, y_err_test],
-                            errs_pred=[y_pred_train_std_augm, y_pred_valid_std_augm, y_pred_test_std_augm],
-                            err_bars=err_bars,
-                            save_dir=save_dir,
-                            dname=data_name,
-                            dlabel=data_label,
-                            units=data_units,
-                            fold=ifold,
-                            run=run, 
-                            model_type=model_type)
+        logging.info("From the whole dataset:\n\t categorical_crossentropy loss: {0:0.4f} \n\t categorical accuracy: {1:0.4f} \n\t top_k_categorical accuracy (k=5): {2:0.4f}\n".\
+            format(model_eval[0], model_eval[1], model_eval[2]))
 
         end_run = time.time()
         elapsed_run = end_run - start_run
-        logging.info("Fold {}, run {} duration: {}".format(ifold, run, str(datetime.timedelta(seconds=elapsed_run))))
+        logging.info("Run {} duration: {}".format(run, str(datetime.timedelta(seconds=elapsed_run))))
         logging.info("")
-
-    # Averaging predictions over augmentations and runs
-    pred_train_mean, pred_train_sigma = utils.mean_result(x_train_enum_card, prediction_train_bag, model_type)
-    pred_valid_mean, pred_valid_sigma = utils.mean_result(x_valid_enum_card, prediction_valid_bag, model_type)
-    pred_test_mean, pred_test_sigma = utils.mean_result(x_test_enum_card, prediction_test_bag, model_type)
-
-    #Save the predictions to the final table
-    if model_type == 'multiclass_classification':
-        pred_test_mean_argmax = np.argmax(pred_test_mean, axis=1).ravel()
-        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean_argmax
-        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma[np.arange(len(pred_test_sigma)), pred_test_mean_argmax.tolist()].ravel()
-    else:
-        predictions.loc[test_idx_clean, 'Mean'] = pred_test_mean.ravel()
-        predictions.loc[test_idx_clean, 'Standard deviation'] = pred_test_sigma.ravel()
-    predictions.to_csv('{}/{}_Predictions.csv'.format(save_dir, data_name), index=False)
-    
-    logging.info("Fold {}, overall performance:".format(ifold))
-
-    # Print the stats for the fold
-    fold_scores = visutils.print_stats(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                                        preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
-                                        errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
-                                        prec=prec, 
-                                        model_type=model_type, 
-                                        labels = unique_classes)        
-    
-    scores_folds.append([err for set_name in fold_scores for err in set_name])
-
-    # Plot prediction vs observation plots for the fold
-    visutils.plot_fit(trues=[y_train_clean_unscaled, y_valid_clean_unscaled, y_test_clean_unscaled],
-                        preds=[pred_train_mean, pred_valid_mean, pred_test_mean],
-                        errs_true=[y_err_train, y_err_valid, y_err_test],
-                        errs_pred=[pred_train_sigma, pred_valid_sigma, pred_test_sigma],
-                        err_bars=err_bars,
-                        save_dir=save_dir,
-                        dname=data_name,
-                        dlabel=data_label,
-                        units=data_units,
-                        fold=ifold,
-                        run=None, 
-                        model_type=model_type)
-
-    end_fold = time.time()
-    elapsed_fold = end_fold - start_fold
-    logging.info("Fold {} duration: {}".format(ifold, str(datetime.timedelta(seconds=elapsed_fold))))
-    logging.info("")
-
-    if ifold == (k_fold_number-1) and not k_fold_index:
-        logging.info("*******************************")
-        logging.info("***Predictions score summary***")
-        logging.info("*******************************")
-        logging.info("")
-
-        logging.info("***Preparing the final out-of-sample prediction.***")
-        logging.info("")
-        
-        predictions = predictions.dropna()
-
-        print(predictions['Mean'].values)
-        # Print the stats for the whole data
-        # final_scores = visutils.print_stats(trues=[data_prop_clean],
-        #                                     preds=[predictions['Mean'].values],
-        #                                     errs_pred=[predictions['Standard deviation'].values],
-        #                                     prec=prec, 
-        #                                     model_type=model_type, 
-        #                                     labels = unique_classes)
-        
-        scores_final = [err for set_name in final_scores for err in set_name]
-        
-        # Final plot for prediction vs observation
-        # visutils.plot_fit(trues=[data_prop_clean.reshape(-1,1)],
-        #                   preds=[predictions['Mean'].values],
-        #                   errs_true=[None],
-        #                   errs_pred=[predictions['Standard deviation'].values],
-        #                   err_bars=err_bars,
-        #                   save_dir=save_dir,
-        #                   dname=data_name,
-        #                   dlabel=data_label,
-        #                   units=data_units,
-        #                   final=True, 
-        #                   model_type=model_type)
-        
-        if model_type == 'regression':
-            scores_list = ['RMSE', 'MAE', 'R2-score']
-        elif model_type.split('_')[1] == 'classification':
-            scores_list = ['Precision', 'Recall', 'F1-score', 'ROC-AUC', 'PRC-AUC']
-
-        scores_folds = pd.DataFrame(scores_folds)
-        if model_type == 'regression':
-            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                                scores_list,\
-                                                                ['Mean', 'Sigma']])
-        elif model_type.split('_')[1] == 'classification':
-            scores_folds.columns = pd.MultiIndex.from_product([['Train', 'Valid', 'Test'],\
-                                                                ['Micro avg', 'Macro avg', 'Weighted avg'],\
-                                                                scores_list,\
-                                                                ['Mean', 'Sigma']])
-
-        scores_folds.index.name = 'Fold'
-        scores_folds.to_csv('{}/{}_Scores_Folds.csv'.format(save_dir, data_name))
-        
-        scores_final = pd.DataFrame(scores_final).T
-        if model_type == 'regression':
-            scores_final.columns = pd.MultiIndex.from_product([scores_list,\
-                                                            ['Mean', 'Sigma']])
-        else:
-            scores_final.columns = pd.MultiIndex.from_product([['Micro avg', 'Macro avg', 'Weighted avg'],\
-                                                                scores_list,\
-                                                                ['Mean', 'Sigma']])
-                                                                
-        scores_final.to_csv('{}/{}_Scores_Final.csv'.format(save_dir, data_name), index=False)
             
-    logging.info("*******************************************")
-    logging.info("***SMILES_X has terminated successfully.***")
-    logging.info("*******************************************")
+    logging.info("******************************************************")
+    logging.info("***Generative SMILES_X has terminated successfully.***")
+    logging.info("******************************************************")
 
     end_all = time.time()
     elapsed_tot = end_all - start_time
