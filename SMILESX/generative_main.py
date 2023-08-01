@@ -423,7 +423,7 @@ def generative_main(data_smiles,
         pretrained_model = None
 
     # Setting up the loss and metrics according to the model_type
-    model_loss = 'sparse_categorical_crossentropy'
+    model_loss = 'categorical_crossentropy'
     model_metrics = [metrics.categorical_accuracy, 
                      metrics.top_k_categorical_accuracy]
     
@@ -447,7 +447,9 @@ def generative_main(data_smiles,
 
     # Tokenize SMILES per dataset
     x_train_enum_tokens = token.get_tokens(x_train_enum)
+    # Compute the length of each tokenized SMILES
     x_train_enum_tokens_len = [len(ismiles) for ismiles in x_train_enum_tokens]
+    # Generate a list of tuples (index, token, length) for each tokenized SMILES
     x_train_enum_tokens_hash = [(ic, itoken, ilen-1) for ic, ilen in enumerate(x_train_enum_tokens_len) for itoken in range(1,ilen)]
 
     logging.info("Examples of tokenized SMILES from a training set:")
@@ -654,23 +656,17 @@ def generative_main(data_smiles,
             # Fit the model
             with strategy.scope():
                 history = model_train.fit(\
-                                trainutils.DataSequence(smiles=x_train_enum_tokens_tointvec,
-                                                        extra=None,
-                                                        props=y_train_enum,
-                                                        batch_size=batch_size * strategy.num_replicas_in_sync),
-                                validation_data = \
-                                trainutils.DataSequence(smiles=x_valid_enum_tokens_tointvec,
-                                                        extra=None,
-                                                        props=y_valid_enum,
-                                                        batch_size=batch_size * strategy.num_replicas_in_sync),
-                                shuffle=True,
-                                initial_epoch=0,
+                                trainutils.LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
+                                                           smiles_set = x_train_enum_tokens_tointvec,
+                                                           vocab_size = len(tokens),
+                                                           max_length = max_length + 1,
+                                                           batch_size=batch_size),
+                                shuffle=False,
                                 epochs=n_epochs,
                                 callbacks=callbacks_list,
                                 verbose=train_verbose,
-                                max_queue_size=batch_size,
-                                use_multiprocessing=False,
-                                workers=1)
+                                max_queue_size=batch_size)
+
             history_train_loss = history.history['loss']
             history_val_loss = history.history['val_loss']
 

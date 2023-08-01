@@ -27,7 +27,10 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
 
     ax = fig.add_subplot(111)
 
-    ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
+    if val_loss is not None:
+        ax.set_ylim(0, max(max(train_loss), max(val_loss))+0.005)
+    else: 
+        ax.set_ylim(0, max(train_loss)+0.005)
 
     if model_type == 'regression':
         plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
@@ -36,7 +39,8 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
     plt.xlabel('Epoch', fontsize=18)
     
     ax.plot(train_loss, color='#3783ad')
-    ax.plot(val_loss, color='#a3cee6')
+    if val_loss is not None:
+        ax.plot(val_loss, color='#a3cee6')
 
     for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
         item.set_fontsize(14)
@@ -65,8 +69,12 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
                    left=True,
                    labelleft=True)
     ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
+    if ifold is not None: 
     plt.savefig('{}/{}_LearningCurve_Fold_{}_Run_{}.png'\
                 .format(save_dir, data_name, ifold, run), bbox_inches='tight')
+    else:
+        plt.savefig('{}/{}_LearningCurve_Run_{}.png'\
+                .format(save_dir, data_name, run), bbox_inches='tight')
     plt.close()
 ##
 
