@@ -279,6 +279,7 @@ def generative_main(data_smiles,
     else:
         main_save_dir = '{}/{}/{}/Train'.format(outdir, data_name, 'Augm' if augmentation else 'Can')
         save_dir = '{}/{}/{}/{}/Train'.format(outdir, data_name, 'LM', 'Augm' if augmentation else 'Can')
+    other_dir = save_dir + '/Other'
     model_dir = save_dir + '/Models'
     res_plot_run_dir = save_dir + '/Figures/Results/Runs'
     lcurve_dir = save_dir + '/Figures/Learning_Curves'
@@ -468,6 +469,7 @@ def generative_main(data_smiles,
         logging.info("Extracting the vocabulary from the current dataset...")
         logging.info("")
         tokens = token.extract_vocab(all_smiles_tokens)
+        vocab_file = '{}/{}_Vocabulary.txt'.format(other_dir, data_name)
         token.save_vocab(tokens, vocab_file)
         tokens = token.get_vocab(vocab_file)
 
@@ -536,10 +538,6 @@ def generative_main(data_smiles,
     logging.info("*** TRAINING ***")
     logging.info("")
 
-    prediction_train_bag = np.zeros((y_train_enum.shape[0], n_class, n_runs))
-    prediction_valid_bag = np.zeros((y_valid_enum.shape[0], n_class, n_runs))
-    prediction_test_bag = np.zeros((y_test_enum.shape[0], n_class, n_runs))
-    
     for run in range(n_runs):
         start_run = time.time()
         

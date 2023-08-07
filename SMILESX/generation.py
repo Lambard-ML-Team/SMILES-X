@@ -52,11 +52,9 @@ class Generation(object):
     infer_augmentation : bool   
         SMILES's augmentation at predictor training (Default: False)
     indir : str 
-        directory of already trained prediction models (*.hdf5) and vocabulary (*.txt) (Default: './output/')
+        directory of already trained prediction models (*.hdf5) and vocabulary (*.txt) (Default: './outputs')
     outdir : str
-        directory for outputs (plots + .txt files) -> 'Inference/'+'{}/{}/'.format(data_name,g_dir_temp) is then created (Default: './output/')
-    vocab_name : str
-        vocabulary's name (Default: 'vocab')
+        directory for outputs (plots + .txt files) -> 'Inference/'+'{}/{}/'.format(data_name,g_dir_temp) is then created (Default: './outputs')
     n_gpus : int
         number of GPUs to use (Default: 1)
     gpus_list : list
@@ -101,9 +99,8 @@ class Generation(object):
                  k_fold_index = None, 
                  gen_augmentation = False, 
                  infer_augmentation = False, 
-                 indir = "./output/", 
-                 outdir = "./output/", 
-                 vocab_name = 'vocab', 
+                 indir = "./outputs", 
+                 outdir = "./outputs", 
                  n_gpus = 1, 
                  gpus_list = None, 
                  gpus_debug = False,
@@ -127,42 +124,68 @@ class Generation(object):
         self.k_fold_index = k_fold_index
         self.gen_augmentation = gen_augmentation
         self.infer_augmentation = infer_augmentation
+        self.indir = indir
+        self.outdir = outdir
         self.prop_names_list = prop_names_list
         self.bounds_list = bounds_list
         self.prop_gamma_list = prop_gamma_list
         self.prior_gamma = prior_gamma
         
-        if self.gen_augmentation:
-            g_dir_temp = 'Augm'
-        else:
-            g_dir_temp = 'Can'
+        infer_model_dir_list = []
+        if self.prop_names_list is None:
+            for iprop_name in self.prop_names_list:
+                infer_model_dir_tmp = '{}/{}/{}/Train/Models'.format(indir, iprop_name, 'Augm' if infer_augmentation else 'Can')
+                infer_model_dir_list.append(infer_model_dir_tmp)
         
-        self.input_dir = indir+'LanguageModel/'+'{}/{}/'.format(data_name,g_dir_temp)
-        self.vocab_dir = indir+'Vocabulary/'+'{}/{}/'.format(vocab_name,g_dir_temp)
-        if not os.path.exists(self.input_dir):
-            print("***Process of generation automatically aborted!***")
-            print("The {} directory does not exist.\n".format(self.input_dir))
-            return
-        if not os.path.exists(self.vocab_dir):
-            print("***Process of generation automatically aborted!***")
-            print("The {} directory does not exist.\n".format(self.vocab_dir))
-            return
-        self.save_dir = outdir+'Generation/'+'{}/{}/'.format(data_name,g_dir_temp)
-        os.makedirs(self.save_dir, exist_ok=True)
+        gen_input_dir = '{}/{}/{}/{}/Train'.format(indir, data_name, 'LM', 'Augm' if infer_augmentation else 'Can')
+        gen_model_dir = gen_input_dir + '/Models'
         
-        for itype in ["txt","hdf5"]:
-            if itype == "txt":
-                exists_file = glob.glob(self.vocab_dir + "*." + itype)
-            else:
-                exists_file = glob.glob(self.input_dir + "*." + itype)
-            exists_file_len = len(exists_file)
-            if exists_file_len == 0:
-                print("***Process of generation automatically aborted!***")
-                if (itype == "hdf5"):
-                    print("The {} directory does not contain any trained language model (*.hdf5 file).\n".format(self.input_dir))
-                else:
-                    print("The {} directory does not contain any vocabulary (Vocabulary.txt file).\n".format(self.vocab_dir))
-                return
+        vocab_file = '{}/Other/{}_Vocabulary.txt'.format(infer_input_dir, data_name)
+        if not os.path.exists(vocab_file):
+            vocab_file = '{}/Other/{}_Vocabulary.txt'.format(gen_input_dir, data_name)
+        
+        if not os.path.exists(gen_model_dir):
+            print("***Process of generation automatically aborted!***")
+            print("The {} directory does not exist.\n".format(gen_model_dir))
+            print("Please, train the generator first.\n")
+            return
+
+        gen_models = glob.glob(gen_model_dir + '/*_Best_Epoch.hdf5')
+        if len(gen_models) == 0:
+            print("***Process of generation automatically aborted!***")
+            print("The {} directory does not contain any best generator model with high CUN score.\n".format(gen_model_dir))
+            print("The training of the generator may have been aborted.\n")
+            print("Please, train the generator again.\n")
+            return
+        len_gen_models = len(gen_models)
+        print("The {} directory contains {} best generator model(s) with high CUN score.\n".format(gen_model_dir, len_gen_models))
+
+        if (self.prop_names_list is not None):
+            for imodel_dir in infer_model_dir_list:
+                if (not os.path.exists(imodel_dir)):
+                    print("***Process of generation automatically aborted!***")
+                    print("The {} directory does not exist.\n".format(imodel_dir))
+                    print("Please, train the predictor first.\n")
+                    return
+
+                infer_models_tmp = glob.glob(imodel_dir + '/*.hdf5')
+                if len(infer_models_tmp) == 0:
+                    print("***Process of generation automatically aborted!***")
+                    print("The {} directory does not contain any predictor model.\n".format(imodel_dir))
+                    print("Please, train the predictor again.\n")
+                    return
+                len_infer_models = len(infer_models_tmp)
+                print("The {} directory contains {} predictor model(s).".format(imodel_dir, len_infer_models))
+                nfold_infer_models = np.unique([int(imodel.split('_Run_')[0].split('_')[-1]) for imodel in infer_models_tmp]).shape[0]
+                print("The {} directory contains {}-fold cross-validation.".format(imodel_dir, nfold_infer_models))
+                nrun_infer_models = np.unique([int(imodel.split('_Run_')[1].split('.')[0]) for imodel in infer_models_tmp]).shape[0]
+                print("The {} directory contains {} runs per fold.\n".format(imodel_dir, nrun_infer_models))
+
+        if not os.path.exists(vocab_file):
+            print("***Process of generation automatically aborted!***")
+            print("The {} file does not exist.\n".format(vocab_file))
+            print("Please, train the predictor or generator first.\n")
+            return
         
         # Predictor(s) initialization --- Put it later when GPU options get an external fonction
         if (self.prop_names_list is not None):
