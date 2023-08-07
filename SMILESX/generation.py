@@ -18,7 +18,7 @@ import numpy as np
 import os
 import glob
 
-from SMILES import model, inference, token, trainutils
+from SMILES import model, inference, token, trainutils, loadmodel
 
 import tensorflow as tf
 from tensorflow.keras.utils import Sequence
@@ -43,6 +43,8 @@ class Generation(object):
         dataset's name
     data_units : str
         property's SI units
+    g_run_number : int
+        number of the run to be considered for the generation model (Default: 0)
     k_fold_number : int
         number of k-folds used for inference (Default: None, i.e. automatically detect k_fold_number from main.Main phase)
     k_fold_index : int
@@ -75,6 +77,7 @@ class Generation(object):
     __init__(self,
              data_name,
              data_units = '',
+             g_run_number = 0,   
              k_fold_number = None,
              k_fold_index = None,
              gen_augmentation = False,
@@ -95,6 +98,7 @@ class Generation(object):
     def __init__(self, 
                  data_name, 
                  data_units = '',
+                 g_run_number = 0, 
                  k_fold_number = None,
                  k_fold_index = None, 
                  gen_augmentation = False, 
@@ -120,6 +124,7 @@ class Generation(object):
         
         self.data_name = data_name
         self.data_units = data_units
+        self.g_run_number = g_run_number
         self.k_fold_number = k_fold_number
         self.k_fold_index = k_fold_index
         self.gen_augmentation = gen_augmentation
@@ -190,7 +195,7 @@ class Generation(object):
         # Predictor(s) initialization --- Put it later when GPU options get an external fonction
         if (self.prop_names_list is not None):
             self.prop_names_list_len = len(self.prop_names_list)
-            self.infer_class_list = list()
+            self.infer_model_list = list()
             if self.prop_gamma_list is None:
                 self.prop_gamma_list = [1.] * self.prop_names_list_len
             if (bounds_list is not None):
@@ -198,19 +203,13 @@ class Generation(object):
                 prop_gamma_list_len = len(self.prop_gamma_list)
                 if self.prop_names_list_len == ((bounds_list_len+prop_gamma_list_len) // 2):
                     for iprop in range(self.prop_names_list_len):
-                        infer_class_tmp = inference.Inference(data_name = self.prop_names_list[iprop], 
-                                                              data_units = self.data_units,
-                                                              k_fold_number = self.k_fold_number,
-                                                              k_fold_index = self.k_fold_index, 
-                                                              augmentation = self.infer_augmentation, 
-                                                              indir = indir, 
-                                                              outdir = outdir,
-                                                              vocab_name = vocab_name, 
-                                                              n_gpus = n_gpus, 
-                                                              gpus = gpus, 
-                                                              gpus_list = gpus_list, 
-                                                              gpus_debug = gpus_debug)
-                        self.infer_class_list.append(infer_class_tmp)
+                        infer_model_tmp = loadmodel.LoadModel(data_name = self.prop_names_list[iprop],
+                                                              augment = self.infer_augmentation, 
+                                                              outdir = indir,
+                                                              gpu_ind = 0, 
+                                                              log_verbose = False,
+                                                              return_attention = False)
+                        self.infer_model_list.append(infer_model_tmp)
                 else:
                     print("The provided bounds_list and/or prop_gamma_list are empty or their length differs from the prop_name_list.\n")
                     return
@@ -218,18 +217,19 @@ class Generation(object):
         # Setting up the trained model for generation, the generator vocabulary, and the predictor for inference
         
         # Tokens as a list
-        self.gen_tokens = token.get_vocab(self.vocab_dir+'Vocabulary.txt')
+        self.gen_tokens = token.get_vocab(vocab_file)
         # Add 'pad', 'unk' tokens to the existing list
+        self.gen_tokens.insert(0, 'unk')
+        self.gen_tokens.insert(0, 'pad')
         self.vocab_size = len(self.gen_tokens)
-        self.gen_tokens, self.vocab_size = token.add_extra_tokens(self.gen_tokens, self.vocab_size)
         self.token_to_int = token.get_tokentoint(self.gen_tokens)
         self.int_to_token = token.get_inttotoken(self.gen_tokens)
         
         K.clear_session()
         # mirror_strategy workaround for model loading
         with tf.device(gpus[0].name): 
-            self.gen_model = load_model(self.input_dir+'LSTMAtt_'+self.data_name+'_model_best.hdf5', 
-                                        custom_objects={'AttentionM': model.AttentionM()})
+            self.gen_model = load_model('{}/{}_Model_Run_{}_Best_Epoch.hdf5'.format(gen_model_dir, data_name, g_run_number), 
+                                        custom_objects={'SoftAttention': model.SoftAttention()})
         self.gen_max_length = self.gen_model.layers[0].output_shape[-1][1]
 
         print("*************************************")
@@ -237,12 +237,16 @@ class Generation(object):
         print("*************************************\n")
     
     def p_to_one(self, dist):
+        # Convert a probability distribution to a one-hot vector
+        # dist is a 2D array where each row is a probability distribution
+        # Returns a 2D array where each row is a one-hot vector
         if len(dist.shape) == 1:
             dist = dist.reshape(1,-1)
         return dist/np.sum(dist, axis=1).reshape(-1,1)
     
-    # Equivalent to p_to_one without temperature
     def normalize(self, preds, temperature=1.0):
+        # Helper function to sample an index from a probability array
+        # Equivalent to p_to_one without temperature
         preds = preds.astype('float64')
         preds = np.log(preds) / temperature
         exp_preds = np.exp(preds)
@@ -250,11 +254,12 @@ class Generation(object):
         return preds
     
     def softmax(self, x, axis=-1):
+        # Compute softmax values for each sets of scores in x
         e_x = np.exp(x - np.max(x, axis=axis).reshape(-1,1))
         return e_x / np.sum(e_x, axis=axis).reshape(-1,1)
     
     def sample(self, preds, temperature=1.0):
-        # helper function to sample an index from a probability array
+        # Helper function to sample an index from a probability array
         preds = self.normalize(preds, temperature)
         probas = np.zeros(preds.shape)
         for ipred in range(preds.shape[0]):
@@ -278,6 +283,10 @@ class Generation(object):
         return stats.t.cdf(x, 10000)
     
     def display(self, prior, likelihood, posterior, int_tokens_list):
+        # Display the prior, likelihood, and posterior distributions in a Jupyter notebook
+        # prior, likelihood, posterior are 2D arrays where each row is a distribution
+        # int_tokens_list is a list of lists of integers
+        # Returns None
         
         clear_output(wait=True)
         
@@ -342,7 +351,7 @@ class Generation(object):
         batch_size: int
             Number of smiles generated in parallel, must be a multiple of n_generate (Default: 128)
         target_sf: str
-            Target sampling function, either 'uniform' or 'prior' (Default: 'uniform')
+            Target sampling function, either 'uniform' or 'gaussian' (Default: 'uniform')
 
         Returns
         -------
@@ -413,9 +422,14 @@ class Generation(object):
     
                 lik_array = np.ones(shape=(n_generate,top_k), dtype='float64')
                 for iinfer in range(self.prop_names_list_len):
-                    lik_array_tmp = self.infer_class_list[iinfer].infer(smiles_input = prob_smiles_list_toinfer, 
+                    lik_array_tmp = self.infer_model_list[iinfer].infer(smiles_input = prob_smiles_list_toinfer, 
                                                                         generation = True, 
                                                                         batch_size = batch_size)
+                    lik_array_tmp = inference.infer(model=self.infer_model_list[iinfer],
+                                                    data_smiles = prob_smiles_list_toinfer.tolist(),
+                                                    augment = False, 
+                                                    check_smiles = False, 
+                                                    log_verbose = False)
                     lik_array_tmp_mean = lik_array_tmp.ens_pred_mean.values.astype('float64')#.reshape(-1,1)
                     
                     ##

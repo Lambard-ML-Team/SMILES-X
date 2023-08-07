@@ -20,7 +20,7 @@ from tensorflow.keras import backend as K
 
 from SMILESX import utils, token, augm
 
-def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool = True, smiles_concat: bool = False, log_verbose: bool = True):
+def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool = True, smiles_concat: bool = False, batch_size: int = 32, log_verbose: bool = True):
     """Inference based on ensemble of trained SMILESX models
 
     Prediction of the property based on the ensemble of SMILESX models.
@@ -36,6 +36,8 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
         Additional data passed together with SMILES.
     smiles_concat: bool
         Whether to apply SMILES concatenation when multiple SMILES per entry are given.
+    batch_size: int
+        The batch size to be used for inference. (Default: 32)
     log_verbose: bool
         Whether to print the output to the console. (Default: True)
     check_smiles: bool
@@ -119,9 +121,11 @@ def infer(model, data_smiles, data_extra=None, augment=False, check_smiles: bool
             # Predict and compare for the training, validation and test sets
             # Compute a mean per set of augmented SMILES
             if model.extra:
-                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec, "extra": extra_enum})
+                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec, "extra": extra_enum}, 
+                                       batch_size=batch_size)
             else:
-                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec})
+                ipred = imodel.predict({"smiles": smiles_enum_tokens_tointvec}, 
+                                       batch_size=batch_size)
             if model.scale_output:
                 # Unscale predictions
                 ipred_unscaled = model.output_scaler_dic["Fold_{}".format(ifold)].inverse_transform(ipred.reshape(-1,1))
