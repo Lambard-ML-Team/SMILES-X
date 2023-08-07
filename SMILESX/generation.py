@@ -420,15 +420,21 @@ class Generation(object):
                 prob_smiles_list_toinfer[:,:(self.gen_max_length-1)] = prob_smiles_list_toinfer[:,1:]
                 prob_smiles_list_toinfer[:,-1] = sub_prior_tokens_list
     
+                # convert back to SMILES and remove special characters
+                new_smiles_list_tmp = list()
+                for ismiles in prob_smiles_list_toinfer:
+                    smiles_tmp = list()
+                    for itoken in ismiles: 
+                        smiles_tmp.append(self.int_to_token[itoken])
+                        smi_tmp = self.join_tokens(self.remove_schar([smiles_tmp]))
+                        new_smiles_list_tmp.append(smi_tmp[0])
+
                 lik_array = np.ones(shape=(n_generate,top_k), dtype='float64')
                 for iinfer in range(self.prop_names_list_len):
-                    lik_array_tmp = self.infer_model_list[iinfer].infer(smiles_input = prob_smiles_list_toinfer, 
-                                                                        generation = True, 
-                                                                        batch_size = batch_size)
                     lik_array_tmp = inference.infer(model=self.infer_model_list[iinfer],
-                                                    data_smiles = prob_smiles_list_toinfer.tolist(),
-                                                    augment = False, 
+                                                    data_smiles = new_smiles_list_tmp,
                                                     check_smiles = False, 
+                                                    batch_size = batch_size,
                                                     log_verbose = False)
                     lik_array_tmp_mean = lik_array_tmp.ens_pred_mean.values.astype('float64')#.reshape(-1,1)
                     
