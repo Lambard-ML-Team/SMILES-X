@@ -18,7 +18,7 @@ import numpy as np
 import os
 import glob
 
-from SMILES import model, inference, token, trainutils, loadmodel
+from SMILESX import model, inference, token, trainutils, loadmodel
 
 import tensorflow as tf
 from tensorflow.keras.utils import Sequence

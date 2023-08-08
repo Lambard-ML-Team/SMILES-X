@@ -6,6 +6,7 @@ import time
 import numpy as np
 import logging
 
+import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -506,6 +507,7 @@ class CxUxN(object):
         self.model_dir = model_dir
         self.run = run
         self.results_dir = results_dir
+        self.verbose = verbose
         
         # tokens to integers and vice versa
         self.vocab_size = len(self.gen_tokens)
@@ -524,10 +526,11 @@ class CxUxN(object):
             K.clear_session()
             # Model's architecture for generation
             self.gen_model = model.LSTMAttModel.create(input_tokens = self.gen_max_length, 
-                                                       vocabsize = self.vocab_size, 
+                                                       vocab_size = self.vocab_size, 
                                                        embed_units = embedding, 
                                                        lstm_units= lstmunits, 
                                                        tdense_units = tdenseunits, 
+                                                       dense_depth=0, 
                                                        model_type = 'multiclass_classification', 
                                                        output_n_nodes = self.vocab_size)
         
@@ -658,7 +661,7 @@ class CxUxN(object):
             self.uniq_list.append(uniqueness)
             self.novel_list.append(novelty)
             self.cun_list.append(cun_val)
-            if verbose:
+            if self.verbose:
                 time_range = time.time() - start_time
                 self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
                                                                                                                                          new_smiles_shape, 

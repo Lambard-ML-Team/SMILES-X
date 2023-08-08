@@ -422,7 +422,7 @@ def generative_main(data_smiles,
                      metrics.top_k_categorical_accuracy]
     
     # Keep track of the fold number for every data point ???
-    predictions.loc[test_idx, 'Fold'] = ifold
+    # predictions.loc[test_idx, 'Fold'] = ifold
 
     # Check/augment the data if requested
     train_augm = augm.augmentation(data_smiles = data_smiles,
@@ -611,7 +611,7 @@ def generative_main(data_smiles,
             #                                                      ignore_first_epochs=ignore_first_epochs)
             logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
             
-            filepath_tmp = '{}/{}_Model_Run_{}_Epoch_{epoch:02d}.hdf5'.format(model_dir, data_name, run)
+            filepath_tmp = model_dir+'/'+data_name+'_Model_Run_'+str(run)+'_Epoch_{epoch:02d}.hdf5'
             checkpoint = ModelCheckpoint(filepath_tmp, 
                                          monitor='loss', 
                                          verbose=0, 
@@ -674,19 +674,19 @@ def generative_main(data_smiles,
             logging.info("")
 
             logging.info("***CxUxN scores history during the training.***\n")
-            cun_metric = utils.CxUxN(init_data = data_smiles.tolist(), 
-                                     data_name = data_name, 
-                                     vocab_path = vocab_file, 
-                                     gen_max_length = max_length+1, 
-                                     gpus = gpus,
-                                     model_init = model_train, 
-                                     n_generate = 1000,
-                                     warm_up = 0, 
-                                     batch_size = 8096, 
-                                     print_fcn = logging.info, 
-                                     model_dir = model_dir, 
-                                     run = run, 
-                                     results_dir = res_plot_run_dir)
+            cun_metric = trainutils.CxUxN(init_data = data_smiles.flatten().tolist(), 
+                                          data_name = data_name, 
+                                          vocab = tokens, 
+                                          gen_max_length = max_length+1, 
+                                          gpus = gpus,
+                                          model_init = model_train, 
+                                          n_generate = 1000,
+                                          warm_up = 0, 
+                                          batch_size = 8096, 
+                                          print_fcn = logging.info, 
+                                          model_dir = model_dir, 
+                                          run = run, 
+                                          results_dir = res_plot_run_dir)
             filepath_tmp_trunc = '{}/{}_Model_Run_{}_Epoch_*.hdf5'.format(model_dir, data_name, run)
             evaluated_epochs_list = glob.glob(filepath_tmp_trunc)
             for iepoch in range(len(evaluated_epochs_list)):
