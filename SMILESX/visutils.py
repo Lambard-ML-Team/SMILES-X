@@ -69,9 +69,9 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
                    left=True,
                    labelleft=True)
     if ifold is not None: 
-    ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
-    plt.savefig('{}/{}_LearningCurve_Fold_{}_Run_{}.png'\
-                .format(save_dir, data_name, ifold, run), bbox_inches='tight')
+        ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
+        plt.savefig('{}/{}_LearningCurve_Fold_{}_Run_{}.png'\
+                    .format(save_dir, data_name, ifold, run), bbox_inches='tight')
     else:
         ax.legend(['Train'], loc='upper right', fontsize=14)
         plt.savefig('{}/{}_LearningCurve_Run_{}.png'\

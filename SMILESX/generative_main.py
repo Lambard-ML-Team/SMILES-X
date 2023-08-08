@@ -302,13 +302,8 @@ def generative_main(data_smiles,
     # Reading the data
     header = []
     data_smiles = data_smiles.replace([np.nan, None], ["", ""]).values
-    if data_smiles.ndim==1:
-        data_smiles = data_smiles.reshape(-1,1)
-        header.extend(["SMILES"])
-    else:
-        data_smiles.shape[1]==1:
-        data_smiles = data_smiles.reshape(-1,1)
-        header.extend(["SMILES"])
+    data_smiles = data_smiles.reshape(-1,1)
+    header.extend(["SMILES"])
 
     # Default model type for the generative SMILES-X
     model_type = 'multiclass_classification' 
@@ -370,11 +365,9 @@ def generative_main(data_smiles,
     logging.info("")
 
     # Setting up GPUs
-    strategy, gpus = else:
-        for i in range(data_smiles.shape[1]):
-            header.extend(["SMILES_{}".format(i+1)])utils.set_gpuoptions(n_gpus=n_gpus,
-                                                                         gpus_list=gpus_list,
-                                                                         gpus_debug=gpus_debug)
+    strategy, gpus = utils.set_gpuoptions(n_gpus=n_gpus,
+                                          gpus_list=gpus_list,
+                                          gpus_debug=gpus_debug)
     if strategy is None:
         raise utils.StopExecution
     logging.info("{} Logical GPU(s) detected and configured.".format(len(gpus)))
