@@ -337,7 +337,7 @@ class Generation(object):
         plt.ylabel('Posterior', fontsize = 15, labelpad = 15)
         plt.show();
     
-    def generate(self, starter = None, n_generate = 1000, top_k = None, diversity = 1., batch_size = 128, target_sf = 'uniform'):
+    def generate(self, starter = None, n_generate = 1000, top_k = None, diversity = 1., batch_size = 128, target_sf = 'uniform', tolerance = 0.1):
         '''
         Generate SMILES from the model.
         starter: str
@@ -352,6 +352,8 @@ class Generation(object):
             Number of smiles generated in parallel, must be a multiple of n_generate (Default: 128)
         target_sf: str
             Target sampling function, either 'uniform' or 'gaussian' (Default: 'uniform')
+        tolerance: float
+            Tolerance for the target sampling function (Default: 0.1)
 
         Returns
         -------
@@ -436,7 +438,7 @@ class Generation(object):
                                                     check_smiles = False, 
                                                     batch_size = batch_size,
                                                     log_verbose = False)
-                    lik_array_tmp_mean = lik_array_tmp.ens_pred_mean.values.astype('float64')#.reshape(-1,1)
+                    lik_array_tmp_mean = lik_array_tmp['mean'].values.astype('float64')#.reshape(-1,1)
                     
                     ##
                     # Maximum likelihood
@@ -444,8 +446,8 @@ class Generation(object):
                     # Lowering the expected standard deviation --> diminish the correctness of generative model
                     # Predicted standard deviation can't be used as it is
                     # A cooling schedule and/or fake, large enough, standard deviation is necessary to drive a "correct" generation
-                    # Not theory strong
-                    lik_array_tmp_std = np.ones(shape=lik_array_tmp.shape[0]) * 20. # 40C close to actual std from inference model
+                    # Heuristic - Ex.: 40C is close to the actual std from inference model
+                    lik_array_tmp_std = np.ones(shape=lik_array_tmp.shape[0]) * tolerance
                     lik_min = (self.bounds_list[iinfer][0] - lik_array_tmp_mean) / lik_array_tmp_std
                     lik_max = (self.bounds_list[iinfer][1] - lik_array_tmp_mean) / lik_array_tmp_std
                     p_gen_min = np.array(list(map(self.t_cdf, lik_min)))
