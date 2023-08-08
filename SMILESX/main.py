@@ -1160,7 +1160,6 @@ def main(data_smiles,
             data_prop_clean = data_prop[predictions['Mean'].notna()]
             predictions = predictions.dropna()
 
-            print(predictions['Mean'].values)
             # Print the stats for the whole data
             final_scores = visutils.print_stats(trues=[data_prop_clean],
                                                 preds=[predictions['Mean'].values],
