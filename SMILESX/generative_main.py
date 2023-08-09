@@ -591,7 +591,7 @@ def generative_main(data_smiles,
                                                             dense_depth=dense_depth,
                                                             model_type=model_type, 
                                                             output_n_nodes=n_class)
-                    custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
+                    custom_adam = Adam(lr=hyper_opt["Learning rate"])
                     model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
                 if run==0:
                     logging.info("Model summary:")
@@ -683,7 +683,7 @@ def generative_main(data_smiles,
                                           gen_max_length = max_length+1, 
                                           gpus = gpus,
                                           model_init = model_train, 
-                                          n_generate = 100,
+                                          n_generate = 1000,
                                           warm_up = 0, 
                                           batch_size = 8096, 
                                           print_fcn = logging.info, 
