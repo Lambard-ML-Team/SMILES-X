@@ -283,7 +283,7 @@ def generative_main(data_smiles,
     model_dir = save_dir + '/Models'
     res_plot_run_dir = save_dir + '/Figures/Results/Runs'
     lcurve_dir = save_dir + '/Figures/Learning_Curves'
-    create_dirs = [model_dir, res_plot_run_dir, lcurve_dir]
+    create_dirs = [model_dir, res_plot_run_dir, lcurve_dir, other_dir]
     for create_dir in create_dirs:
         if not os.path.exists(create_dir):
             os.makedirs(create_dir)
@@ -510,6 +510,9 @@ def generative_main(data_smiles,
     if os.path.exists(hyper_opt_file):
         hyper_opt_df = pd.read_csv(hyper_opt_file)
         hyper_opt = hyper_opt_df.iloc[0].to_dict()
+        # Batch size and learning rate optimised from inference task are ignored
+        hyper_opt['Batch size'] = bs_ref  
+        hyper_opt['Learning rate'] = lr_ref
         logging.info("File containing the list of optimised hyperparameters:")
         logging.info("    {}".format(hyper_opt_file))
         logging.info("")
@@ -670,7 +673,7 @@ def generative_main(data_smiles,
                     history_train_metric_tmp = history.history[imetrics_p]
                     visutils.lm_metric_curve(history_train_metric_tmp, imetrics, imetrics_p, lcurve_dir, data_name, run)
 
-            logging.info("\nBest loss @ Epoch #{}\n".format(np.argmin(history.history['loss'])))
+            logging.info("\n\nBest loss @ Epoch #{}\n".format(np.argmin(history.history['loss'])))
             logging.info("")
 
             logging.info("***CxUxN scores history during the training.***\n")
@@ -680,13 +683,14 @@ def generative_main(data_smiles,
                                           gen_max_length = max_length+1, 
                                           gpus = gpus,
                                           model_init = model_train, 
-                                          n_generate = 1000,
+                                          n_generate = 100,
                                           warm_up = 0, 
                                           batch_size = 8096, 
                                           print_fcn = logging.info, 
                                           model_dir = model_dir, 
                                           run = run, 
-                                          results_dir = res_plot_run_dir)
+                                          results_dir = res_plot_run_dir, 
+                                          verbose = True)
             filepath_tmp_trunc = '{}/{}_Model_Run_{}_Epoch_*.hdf5'.format(model_dir, data_name, run)
             evaluated_epochs_list = glob.glob(filepath_tmp_trunc)
             for iepoch in range(len(evaluated_epochs_list)):
@@ -697,21 +701,20 @@ def generative_main(data_smiles,
         logging.info("Evaluating performance of the trained model...")
         logging.info("")
 
-        with tf.device(gpus[0].name):
-            K.clear_session()
-            model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
-            model_train.compile(loss = model_loss, optimizer=Adam(), metrics=model_metrics)
+        # with tf.device(gpus[0].name):
+        #     K.clear_session()
+        #     model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
+        #     model_train.compile(loss = model_loss, optimizer=Adam(), metrics=model_metrics)
 
-            model_eval = model_train.evaluate(LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
-                                                              smiles_set = x_train_enum_tokens_tointvec, 
-                                                              vocab_size = len(tokens), 
-                                                              max_length = max_length+1, 
-                                                              batch_size = batchsize_pergpu), 
-                                              max_queue_size = batch_size, 
-                                              verbose = 0)
+        #     model_eval = model_train.evaluate(trainutils.LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
+        #                                                       smiles_set = x_train_enum_tokens_tointvec, 
+        #                                                       vocab_size = len(tokens), 
+        #                                                       max_length = max_length+1, 
+        #                                                       batch_size = batchsize_pergpu), 
+        #                                       verbose = 0)
 
-        logging.info("From the whole dataset:\n\t categorical_crossentropy loss: {0:0.4f} \n\t categorical accuracy: {1:0.4f} \n\t top_k_categorical accuracy (k=5): {2:0.4f}\n".\
-            format(model_eval[0], model_eval[1], model_eval[2]))
+        # logging.info("From the whole dataset:\n\t categorical_crossentropy loss: {0:0.4f} \n\t categorical accuracy: {1:0.4f} \n\t top_k_categorical accuracy (k=5): {2:0.4f}\n".\
+        #     format(model_eval[0], model_eval[1], model_eval[2]))
 
         end_run = time.time()
         elapsed_run = end_run - start_run
