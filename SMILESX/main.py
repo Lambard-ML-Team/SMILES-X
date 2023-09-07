@@ -526,6 +526,7 @@ def main(data_smiles,
         model_loss = 'mse'
         model_metrics = [metrics.mae, metrics.mse]
     elif model_type == 'classification':
+        scale_output = False
         kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True, random_state=42)
         kf.get_n_splits(X=data_smiles, y=data_prop)
         kf_splits = kf.split(X=data_smiles, y=data_prop)
