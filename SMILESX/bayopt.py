@@ -235,7 +235,7 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
             # Skip the first half of epochs during evaluation
             # Ignore the noisy burn-in period of training
             best_epoch = np.argmin(history.history['val_loss'][int(bo_epochs//2):])
-            score_valid = history.history[hist_val_name][best_epoch]
+            score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
 
             if math.isnan(score_valid): # treat diverging architectures (rare event)
                 score_valid = math.inf
