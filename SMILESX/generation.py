@@ -18,7 +18,7 @@ import numpy as np
 import os
 import glob
 
-from SMILESX import model, inference, token, trainutils, loadmodel
+from SMILESX import model, inference, token, utils, trainutils, loadmodel
 
 import tensorflow as tf
 from tensorflow.keras.utils import Sequence
@@ -41,14 +41,8 @@ class Generation(object):
     ----------
     data_name : str
         dataset's name
-    data_units : str
-        property's SI units
     g_run_number : int
         number of the run to be considered for the generation model (Default: 0)
-    k_fold_number : int
-        number of k-folds used for inference (Default: None, i.e. automatically detect k_fold_number from main.Main phase)
-    k_fold_index : int
-        k-fold index to be used for inference (Default: None, i.e. use all the models, then average)
     gen_augmentation : bool
         SMILES's augmentation at generator training (Default: False)
     infer_augmentation : bool   
@@ -76,10 +70,7 @@ class Generation(object):
     -------
     __init__(self,
              data_name,
-             data_units = '',
              g_run_number = 0,   
-             k_fold_number = None,
-             k_fold_index = None,
              gen_augmentation = False,
              infer_augmentation = False,
              indir = "./output/",
@@ -97,10 +88,7 @@ class Generation(object):
 
     def __init__(self, 
                  data_name, 
-                 data_units = '',
                  g_run_number = 0, 
-                 k_fold_number = None,
-                 k_fold_index = None, 
                  gen_augmentation = False, 
                  infer_augmentation = False, 
                  indir = "./outputs", 
@@ -114,19 +102,15 @@ class Generation(object):
                  prior_gamma = 1.):
         
         # GPUs options
-        #if n_gpus > 1:
-        self.strategy, gpus = utils.set_gpuoptions(n_gpus = n_gpus, 
-                                                   gpus_list = gpus_list, 
-                                                   gpus_debug = gpus_debug)
+        self.strategy, self.gpus = utils.set_gpuoptions(n_gpus = n_gpus, 
+                                                        gpus_list = gpus_list, 
+                                                        gpus_debug = gpus_debug)
         if self.strategy is None:
-            return
+            raise utils.StopExecution
         ##
         
         self.data_name = data_name
-        self.data_units = data_units
         self.g_run_number = g_run_number
-        self.k_fold_number = k_fold_number
-        self.k_fold_index = k_fold_index
         self.gen_augmentation = gen_augmentation
         self.infer_augmentation = infer_augmentation
         self.indir = indir
@@ -137,7 +121,7 @@ class Generation(object):
         self.prior_gamma = prior_gamma
         
         infer_model_dir_list = []
-        if self.prop_names_list is None:
+        if self.prop_names_list is not None:
             for iprop_name in self.prop_names_list:
                 infer_model_dir_tmp = '{}/{}/{}/Train/Models'.format(indir, iprop_name, 'Augm' if infer_augmentation else 'Can')
                 infer_model_dir_list.append(infer_model_dir_tmp)
@@ -145,6 +129,7 @@ class Generation(object):
         gen_input_dir = '{}/{}/{}/{}/Train'.format(indir, data_name, 'LM', 'Augm' if infer_augmentation else 'Can')
         gen_model_dir = gen_input_dir + '/Models'
         
+        infer_input_dir = '{}/{}/{}/Train'.format(indir, data_name, 'Augm' if infer_augmentation else 'Can')
         vocab_file = '{}/Other/{}_Vocabulary.txt'.format(infer_input_dir, data_name)
         if not os.path.exists(vocab_file):
             vocab_file = '{}/Other/{}_Vocabulary.txt'.format(gen_input_dir, data_name)
@@ -165,7 +150,7 @@ class Generation(object):
         len_gen_models = len(gen_models)
         print("The {} directory contains {} best generator model(s) with high CUN score.\n".format(gen_model_dir, len_gen_models))
 
-        if (self.prop_names_list is not None):
+        if self.prop_names_list is not None:
             for imodel_dir in infer_model_dir_list:
                 if (not os.path.exists(imodel_dir)):
                     print("***Process of generation automatically aborted!***")
@@ -193,7 +178,7 @@ class Generation(object):
             return
         
         # Predictor(s) initialization --- Put it later when GPU options get an external fonction
-        if (self.prop_names_list is not None):
+        if self.prop_names_list is not None:
             self.prop_names_list_len = len(self.prop_names_list)
             self.infer_model_list = list()
             if self.prop_gamma_list is None:
@@ -206,13 +191,24 @@ class Generation(object):
                         infer_model_tmp = loadmodel.LoadModel(data_name = self.prop_names_list[iprop],
                                                               augment = self.infer_augmentation, 
                                                               outdir = indir,
-                                                              gpu_ind = 0, 
+                                                              gpu_name = self.gpus,
+                                                              strategy = self.strategy, 
                                                               log_verbose = False,
                                                               return_attention = False)
                         self.infer_model_list.append(infer_model_tmp)
                 else:
                     print("The provided bounds_list and/or prop_gamma_list are empty or their length differs from the prop_name_list.\n")
                     return
+            else:
+                print("The provided bounds_list is empty.\n")
+                return
+        else:
+            self.prop_names_list_len = 0
+            self.infer_model_list = None
+            self.prop_gamma_list = None
+            self.bounds_list = None
+            print("No property to infer.\n")
+        ##
             
         # Setting up the trained model for generation, the generator vocabulary, and the predictor for inference
         
@@ -227,7 +223,7 @@ class Generation(object):
         
         K.clear_session()
         # mirror_strategy workaround for model loading
-        with tf.device(gpus[0].name): 
+        with tf.device(self.gpus[0].name): 
             self.gen_model = load_model('{}/{}_Model_Run_{}_Best_Epoch.hdf5'.format(gen_model_dir, data_name, g_run_number), 
                                         custom_objects={'SoftAttention': model.SoftAttention()})
         self.gen_max_length = self.gen_model.layers[0].output_shape[-1][1]
@@ -337,7 +333,7 @@ class Generation(object):
         plt.ylabel('Posterior', fontsize = 15, labelpad = 15)
         plt.show();
     
-    def generate(self, starter = None, n_generate = 1000, top_k = None, diversity = 1., batch_size = 128, target_sf = 'uniform', tolerance = 0.1):
+    def generate(self, starter = None, n_generate = 1000, top_k = None, diversity = 1., batch_size = 128, target_sf = 'uniform', tolerance = 10):
         '''
         Generate SMILES from the model.
         starter: str
@@ -346,14 +342,14 @@ class Generation(object):
             Number of SMILES to generate, must be a multiple of batch_size (Default: 1000)
         top_k: int
             Top k tokens to take into account for scoring (Default: None, i.e. no limit), must be > 0 and <= vocab_size (Default: None)
-        diversity: float
+        diversity: floatDataSequence
             Diversity (or temperature) controller during sampling, must be > 0 (Default: 1.)
         batch_size: int
             Number of smiles generated in parallel, must be a multiple of n_generate (Default: 128)
         target_sf: str
             Target sampling function, either 'uniform' or 'gaussian' (Default: 'uniform')
         tolerance: float
-            Tolerance for the target sampling function (Default: 0.1)
+            Tolerance for the target sampling function (Default: 10)
 
         Returns
         -------
@@ -436,6 +432,7 @@ class Generation(object):
                     lik_array_tmp = inference.infer(model=self.infer_model_list[iinfer],
                                                     data_smiles = new_smiles_list_tmp,
                                                     check_smiles = False, 
+                                                    augment = False, 
                                                     batch_size = batch_size,
                                                     log_verbose = False)
                     lik_array_tmp_mean = lik_array_tmp['mean'].values.astype('float64')#.reshape(-1,1)

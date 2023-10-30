@@ -24,6 +24,8 @@ rkrb.DisableLog('rdApp.error')
 
 from SMILESX import token, model
 
+import matplotlib.pyplot as plt
+
 import random
 
 np.random.seed(seed=123)
@@ -593,6 +595,9 @@ class CxUxN(object):
             ##
 
             # Generate new SMILES
+            time_range = 0
+
+            #while time_range < 60: 
             while new_smiles_shape < self.n_generate:
                 # shape: (batch_size, vocab_size) 
                 prior = self.gen_model.predict(DataSequence(smiles=new_smiles_tmp, 
@@ -623,6 +628,8 @@ class CxUxN(object):
                                                        (len(finished_smiles_idx_tmp), 1)), 
                                                axis = 0)
                     new_smiles_shape = new_smiles.shape[0]
+
+                time_range = time.time() - start_time
 
             new_smiles_list = list()
             for ismiles in new_smiles:
@@ -661,13 +668,14 @@ class CxUxN(object):
             self.uniq_list.append(uniqueness)
             self.novel_list.append(novelty)
             self.cun_list.append(cun_val)
+
             if self.verbose:
-                time_range = time.time() - start_time
+                verbose_time_range = time.time() - start_time
                 self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
                                                                                                                                          new_smiles_shape, 
                                                                                                                                          new_smiles_list_len, 
                                                                                                                                          cun_val*100., 
-                                                                                                                                         time_range))
+                                                                                                                                         verbose_time_range))
             
     def on_evaluation_end(self):
         # Save best weights
@@ -684,6 +692,6 @@ class CxUxN(object):
             plt.ylabel('Score')
             plt.title('')
             plt.xlabel('Epoch')
-            plt.savefig('{}/{}_Model_Run_{}_History_CxUxN_score.png', bbox_inches='tight'.format(self.results_dir, self.data_name, self.run))
+            plt.savefig('{}/{}_Model_Run_{}_History_CxUxN_score.png'.format(self.results_dir, self.data_name, self.run), bbox_inches='tight')
             plt.close()
 ##
