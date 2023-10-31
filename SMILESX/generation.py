@@ -126,13 +126,17 @@ class Generation(object):
                 infer_model_dir_tmp = '{}/{}/{}/Train/Models'.format(indir, iprop_name, 'Augm' if infer_augmentation else 'Can')
                 infer_model_dir_list.append(infer_model_dir_tmp)
         
-        gen_input_dir = '{}/{}/{}/{}/Train'.format(indir, data_name, 'LM', 'Augm' if infer_augmentation else 'Can')
+        gen_input_dir = '{}/{}/{}/{}/Train'.format(indir, data_name, 'LM', 'Augm' if gen_augmentation else 'Can')
         gen_model_dir = gen_input_dir + '/Models'
-        
-        infer_input_dir = '{}/{}/{}/Train'.format(indir, data_name, 'Augm' if infer_augmentation else 'Can')
-        vocab_file = '{}/Other/{}_Vocabulary.txt'.format(infer_input_dir, data_name)
+
+        vocab_file = '{}/Other/{}_Vocabulary.txt'.format(gen_input_dir, data_name)
         if not os.path.exists(vocab_file):
-            vocab_file = '{}/Other/{}_Vocabulary.txt'.format(gen_input_dir, data_name)
+            print("***Process of generation automatically aborted!***")
+            print("The {} file does not exist.\n".format(vocab_file))
+            print("Please, train the generator first.\n")
+            return
+
+        infer_input_dir = '{}/{}/{}/Train'.format(indir, data_name, 'Augm' if infer_augmentation else 'Can')
         
         if not os.path.exists(gen_model_dir):
             print("***Process of generation automatically aborted!***")
@@ -170,12 +174,6 @@ class Generation(object):
                 print("The {} directory contains {}-fold cross-validation.".format(imodel_dir, nfold_infer_models))
                 nrun_infer_models = np.unique([int(imodel.split('_Run_')[1].split('.')[0]) for imodel in infer_models_tmp]).shape[0]
                 print("The {} directory contains {} runs per fold.\n".format(imodel_dir, nrun_infer_models))
-
-        if not os.path.exists(vocab_file):
-            print("***Process of generation automatically aborted!***")
-            print("The {} file does not exist.\n".format(vocab_file))
-            print("Please, train the predictor or generator first.\n")
-            return
         
         # Predictor(s) initialization --- Put it later when GPU options get an external fonction
         if self.prop_names_list is not None:
@@ -425,7 +423,7 @@ class Generation(object):
                     for itoken in ismiles: 
                         smiles_tmp.append(self.int_to_token[itoken])
                         smi_tmp = self.join_tokens(self.remove_schar([smiles_tmp]))
-                        new_smiles_list_tmp.append(smi_tmp[0])
+                    new_smiles_list_tmp.append(smi_tmp[0])
 
                 lik_array = np.ones(shape=(n_generate,top_k), dtype='float64')
                 for iinfer in range(self.prop_names_list_len):
@@ -456,7 +454,7 @@ class Generation(object):
                     ##
                     #
                     ##
-                                    
+
                 posterior = (sub_prior**self.prior_gamma) * lik_array 
                 posterior = self.p_to_one(posterior)
             else:
@@ -508,7 +506,6 @@ class Generation(object):
                 new_smiles_list.append(smi_tmp)
                 print("Generation #{}".format(len(new_smiles_list)), end='\r')
             except:
-                continue
-                # do nothing
+                continue # do nothing
                     
         return new_smiles_list
