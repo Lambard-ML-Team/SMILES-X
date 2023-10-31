@@ -59,12 +59,6 @@ class Generation(object):
         debug mode for GPUs (Default: False)
     prop_names_list : list  
         list of properties' names (Default: None)
-    bounds_list : list
-        list of properties' bounds (Default: None)
-    prop_gamma_list : list
-        list of properties' gamma (Default: None)
-    prior_gamma : float
-        gamma for the prior (Default: 1.)
 
     Methods
     -------
@@ -79,10 +73,7 @@ class Generation(object):
              n_gpus = 1,
              gpus_list = None,
              gpus_debug = False,
-             prop_names_list = None,
-             bounds_list = None,
-             prop_gamma_list = None,
-             prior_gamma = 1.)
+             prop_names_list = None)
     Initialize the class Generation with the given parameters (see Attributes). 
     '''
 
@@ -96,10 +87,7 @@ class Generation(object):
                  n_gpus = 1, 
                  gpus_list = None, 
                  gpus_debug = False,
-                 prop_names_list = None, 
-                 bounds_list = None, 
-                 prop_gamma_list = None, 
-                 prior_gamma = 1.):
+                 prop_names_list = None):
         
         # GPUs options
         self.strategy, self.gpus = utils.set_gpuoptions(n_gpus = n_gpus, 
@@ -116,9 +104,6 @@ class Generation(object):
         self.indir = indir
         self.outdir = outdir
         self.prop_names_list = prop_names_list
-        self.bounds_list = bounds_list
-        self.prop_gamma_list = prop_gamma_list
-        self.prior_gamma = prior_gamma
         
         infer_model_dir_list = []
         if self.prop_names_list is not None:
@@ -179,32 +164,18 @@ class Generation(object):
         if self.prop_names_list is not None:
             self.prop_names_list_len = len(self.prop_names_list)
             self.infer_model_list = list()
-            if self.prop_gamma_list is None:
-                self.prop_gamma_list = [1.] * self.prop_names_list_len
-            if (bounds_list is not None):
-                bounds_list_len = len(self.bounds_list)
-                prop_gamma_list_len = len(self.prop_gamma_list)
-                if self.prop_names_list_len == ((bounds_list_len+prop_gamma_list_len) // 2):
-                    for iprop in range(self.prop_names_list_len):
-                        infer_model_tmp = loadmodel.LoadModel(data_name = self.prop_names_list[iprop],
-                                                              augment = self.infer_augmentation, 
-                                                              outdir = indir,
-                                                              gpu_name = self.gpus,
-                                                              strategy = self.strategy, 
-                                                              log_verbose = False,
-                                                              return_attention = False)
-                        self.infer_model_list.append(infer_model_tmp)
-                else:
-                    print("The provided bounds_list and/or prop_gamma_list are empty or their length differs from the prop_name_list.\n")
-                    return
-            else:
-                print("The provided bounds_list is empty.\n")
-                return
+            for iprop in range(self.prop_names_list_len):
+                infer_model_tmp = loadmodel.LoadModel(data_name = self.prop_names_list[iprop],
+                                                        augment = self.infer_augmentation, 
+                                                        outdir = indir,
+                                                        gpu_name = self.gpus,
+                                                        strategy = self.strategy, 
+                                                        log_verbose = False,
+                                                        return_attention = False)
+                self.infer_model_list.append(infer_model_tmp)
         else:
             self.prop_names_list_len = 0
             self.infer_model_list = None
-            self.prop_gamma_list = None
-            self.bounds_list = None
             print("No property to infer.\n")
         ##
             
@@ -331,7 +302,17 @@ class Generation(object):
         plt.ylabel('Posterior', fontsize = 15, labelpad = 15)
         plt.show();
     
-    def generate(self, starter = None, n_generate = 1000, top_k = None, diversity = 1., batch_size = 128, target_sf = 'uniform', tolerance = 10):
+    def generate(self, 
+                 starter = None, 
+                 n_generate = 1000, 
+                 top_k = None, 
+                 diversity = 1., 
+                 batch_size = 128, 
+                 target_sf = 'uniform', 
+                 bounds_list = None, 
+                 tolerance = 10, 
+                 prop_gamma_list = None, 
+                 prior_gamma = 1.):
         '''
         Generate SMILES from the model.
         starter: str
@@ -346,14 +327,35 @@ class Generation(object):
             Number of smiles generated in parallel, must be a multiple of n_generate (Default: 128)
         target_sf: str
             Target sampling function, either 'uniform' or 'gaussian' (Default: 'uniform')
+        bounds_list : list
+            list of properties' bounds (Default: None)
         tolerance: float
             Tolerance for the target sampling function (Default: 10)
+        prop_gamma_list : list
+            list of properties' gamma (Default: None)
+        prior_gamma : float
+            gamma for the prior (Default: 1.)
 
         Returns
         -------
         new_smiles_list: list
             List of generated SMILES
         '''
+
+        if self.prop_names_list is not None:
+            if prop_gamma_list is None:
+                prop_gamma_list = [1.] * self.prop_names_list_len
+            if (bounds_list is not None):
+                bounds_list_len = len(bounds_list)
+                prop_gamma_list_len = len(prop_gamma_list)
+                if self.prop_names_list_len != ((bounds_list_len+prop_gamma_list_len) // 2):                    
+                    print("The provided bounds_list and/or prop_gamma_list are empty or their length differs from the prop_name_list.\n")
+                    return
+            else:
+                print("The provided bounds_list is empty.\n")
+                return
+        else:
+            print("No property to infer.\n")
 
         # list of generated SMILES
         pad_token_int = self.token_to_int['pad']
@@ -387,10 +389,10 @@ class Generation(object):
         if self.prop_names_list is not None:
             for iinfer in range(self.prop_names_list_len):
                 if target_sf == 'uniform':
-                    targets_col_tmp = np.random.uniform(self.bounds_list[iinfer][0], self.bounds_list[iinfer][1], n_generate).reshape(-1,1)
+                    targets_col_tmp = np.random.uniform(bounds_list[iinfer][0], bounds_list[iinfer][1], n_generate).reshape(-1,1)
                 elif target_sf == 'gaussian':
-                    targets_col_tmp = np.random.normal((self.bounds_list[iinfer][0]+self.bounds_list[iinfer][1])/2., 
-                                                       (self.bounds_list[iinfer][1]-self.bounds_list[iinfer][0])/2., 
+                    targets_col_tmp = np.random.normal((bounds_list[iinfer][0]+bounds_list[iinfer][1])/2., 
+                                                       (bounds_list[iinfer][1]-bounds_list[iinfer][0])/2., 
                                                        n_generate). reshape(-1,1)
                 targets_array = np.concatenate([targets_array, targets_col_tmp], axis=-1)
             targets_array = np.tile(targets_array, (1,top_k)).reshape(n_generate*top_k,self.prop_names_list_len)
@@ -443,19 +445,19 @@ class Generation(object):
                     # A cooling schedule and/or fake, large enough, standard deviation is necessary to drive a "correct" generation
                     # Heuristic - Ex.: 40C is close to the actual std from inference model
                     lik_array_tmp_std = np.ones(shape=lik_array_tmp.shape[0]) * tolerance
-                    lik_min = (self.bounds_list[iinfer][0] - lik_array_tmp_mean) / lik_array_tmp_std
-                    lik_max = (self.bounds_list[iinfer][1] - lik_array_tmp_mean) / lik_array_tmp_std
+                    lik_min = (bounds_list[iinfer][0] - lik_array_tmp_mean) / lik_array_tmp_std
+                    lik_max = (bounds_list[iinfer][1] - lik_array_tmp_mean) / lik_array_tmp_std
                     p_gen_min = np.array(list(map(self.t_cdf, lik_min)))
                     p_gen_max = np.array(list(map(self.t_cdf, lik_max)))
                     p_gen_in = p_gen_max - p_gen_min
                     p_gen_in[p_gen_in < np.finfo(np.float64).eps] = np.finfo(np.float64).eps
                     p_gen_in = p_gen_in.reshape(n_generate,top_k)
-                    lik_array *= (p_gen_in**self.prop_gamma_list[iinfer])
+                    lik_array *= (p_gen_in**prop_gamma_list[iinfer])
                     ##
                     #
                     ##
 
-                posterior = (sub_prior**self.prior_gamma) * lik_array 
+                posterior = (sub_prior**prior_gamma) * lik_array 
                 posterior = self.p_to_one(posterior)
             else:
                 posterior = sub_prior
@@ -483,10 +485,10 @@ class Generation(object):
                     targets_array_tmp = np.empty(shape=(len(finished_smiles_idx_tmp),0), dtype=np.float64)
                     for iinfer in range(self.prop_names_list_len):
                         if target_sf == 'uniform':
-                            targets_col_tmp = np.random.uniform(self.bounds_list[iinfer][0], self.bounds_list[iinfer][1], len(finished_smiles_idx_tmp)).reshape(-1,1)
+                            targets_col_tmp = np.random.uniform(bounds_list[iinfer][0], bounds_list[iinfer][1], len(finished_smiles_idx_tmp)).reshape(-1,1)
                         elif target_sf == 'gaussian':
-                            targets_col_tmp = np.random.normal((self.bounds_list[iinfer][0]+self.bounds_list[iinfer][1])/2., 
-                                                               (self.bounds_list[iinfer][1]-self.bounds_list[iinfer][0])/2., 
+                            targets_col_tmp = np.random.normal((bounds_list[iinfer][0]+bounds_list[iinfer][1])/2., 
+                                                               (bounds_list[iinfer][1]-bounds_list[iinfer][0])/2., 
                                                                len(finished_smiles_idx_tmp)). reshape(-1,1)
                         targets_array_tmp = np.concatenate([targets_array_tmp, targets_col_tmp], axis=-1)
                     targets_array_tmp = np.tile(targets_array_tmp, (1,top_k)).reshape(len(finished_smiles_idx_tmp)*top_k,self.prop_names_list_len)
