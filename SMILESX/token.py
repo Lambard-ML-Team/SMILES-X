@@ -193,3 +193,25 @@ def get_vocab(tokens_file):
         tokens = ast.literal_eval(f.read())
     return tokens
 ##
+
+def onehot(smiles_array, vocab_size):
+    '''
+    Encodes last token to one-hot vector
+
+    Parameters
+    ----------
+    smiles_array: array
+        Array of last tokens (number of tokens,) to be encoded
+    vocab_size: int
+        Size of the vocabulary which defines the size of a one-hot vetor
+
+    Returns
+    -------
+    one_hot: array
+        Array of one-vectors (number of tokens, vocab_size)
+    '''
+    one_hot =  np.zeros(shape=(smiles_array.shape[0], vocab_size), dtype=np.int32)
+    for csmile, ismile in enumerate(smiles_array):
+        one_hot[csmile, ismile[0]] = 1
+    return one_hot
+##

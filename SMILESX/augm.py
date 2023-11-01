@@ -19,6 +19,8 @@ def augmentation(data_smiles, indices, data_extra=None, data_prop=None, check_sm
     ----------
     data_smiles:
         SMILES array for augmentation
+    indices:
+        Indices of the SMILES array for augmentation
     data_extra:
         Corresponding extra data array for augmentation
     data_prop:

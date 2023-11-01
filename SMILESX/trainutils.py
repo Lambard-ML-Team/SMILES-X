@@ -6,9 +6,30 @@ import time
 import numpy as np
 import logging
 
+import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import Callback
+
+import shutil
+
+from rdkit import Chem
+# Disables RDKit whiny logging.
+import rdkit.rdBase as rkrb
+import rdkit.RDLogger as rkl
+logger = rkl.logger()
+logger.setLevel(rkl.ERROR)
+rkrb.DisableLog('rdApp.error')
+
+from SMILESX import token, model, genutils
+
+import matplotlib.pyplot as plt
+
+import random
+
+np.random.seed(seed=123)
+np.set_printoptions(precision=3)
 
 class DataSequence(Sequence):
     """Split data into batches for trainin
@@ -52,12 +73,15 @@ class DataSequence(Sequence):
 
     def __getitem__(self, idx):
         batch_smiles = self.smiles[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_prop = self.props[idx * self.batch_size:(idx + 1) * self.batch_size]
-        if self.extra is not None:
-            batch_extra = self.extra[idx * self.batch_size:(idx + 1) * self.batch_size]
-            return {"smiles": batch_smiles, "extra": batch_extra}, batch_prop
+        if self.props is not None:
+            batch_prop = self.props[idx * self.batch_size:(idx + 1) * self.batch_size]
+            if self.extra is not None:
+                batch_extra = self.extra[idx * self.batch_size:(idx + 1) * self.batch_size]
+                return {"smiles": batch_smiles, "extra": batch_extra}, batch_prop
+            else:
+                return {"smiles": batch_smiles}, batch_prop
         else:
-            return {"smiles": batch_smiles}, batch_prop
+            return {"smiles": batch_smiles}
 ##
 
 class CyclicLR(Callback):
@@ -342,4 +366,300 @@ class IgnoreBeginningSaveBest(Callback):
                 logging.info("")
                 logging.info("Saving the best model to {}"\
                              .format(self.filepath))
+##
+
+def seq_trunc(hash_set, smiles_set, max_length, vocab_size):   
+    '''
+    To sequentially produce truncated SMILES of one token
+
+    Parameters
+    ----------
+    hash_set: array of arrays of dimensions (3, number_of_SMILES)
+    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
+    max_length: maximum length of the SMILES
+    vocab_size: size of the vocabulary
+
+    Returns
+    -------
+    Two arrays:
+            - Truncated SMILES
+            - One-hot vectored truncated token
+    '''
+
+    batch_smiles = hash_set[0].tolist()
+    batch_sampling = hash_set[1].tolist()
+    batch_weight = hash_set[2].tolist()
+    
+    batch_x_list = list()
+    batch_y_list = list()
+    batch_w_list = list()
+    for ismiles, icut, iw in zip(batch_smiles, batch_sampling, batch_weight):
+        smiles_tmp = smiles_set[ismiles]
+        batch_x_list.append(smiles_tmp[:icut])
+        batch_y_list.append([smiles_tmp[icut]])
+        batch_w_list.append(1./float(iw))
+    batch_x = pad_sequences(batch_x_list, maxlen = max_length, dtype = 'int16', padding = 'pre', value=0)
+    batch_y = np.ndarray.astype(np.array(batch_y_list), dtype = 'int16')
+    batch_y = token.onehot(batch_y, vocab_size)
+    batch_w = np.array(batch_w_list)
+        
+    return batch_x, batch_y, batch_w
+##
+
+class LM_DataSequence(Sequence):
+    '''
+    Data sequence to be fed to the neural network during training through batches of data
+
+    Parameters
+    ----------
+    hash_set: array of arrays of dimensions (3, number_of_SMILES)
+    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
+    vocab_size: size of the vocabulary
+    max_length: maximum length of the SMILES
+    batch_size: batch's size
+    training: set up the training mode (Default: True)
+
+    Returns
+    -------
+    In training mode, returns:
+            a batch of arrays of tokenized and encoded SMILES,
+            a batch of SMILES property
+    else, returns:
+            a batch of arrays of tokenized and encoded SMILES alone
+
+    '''
+
+    def __init__(self, hash_set, smiles_set, vocab_size, max_length, batch_size, training = True):
+        self.hash_set = hash_set
+        self.smiles_set = smiles_set
+        self.vocab_size = vocab_size
+        self.max_length = max_length
+        self.batch_size = batch_size
+        self.training = training
+        self.hash_shuffled_array = np.transpose(np.array(random.sample(self.hash_set, len(self.hash_set))))
+        self.iepoch = 0
+
+    def on_epoch_end(self):
+        self.hash_shuffled_array = np.transpose(np.array(random.sample(self.hash_set, len(self.hash_set))))
+        self.iepoch += 1
+        
+    def __len__(self):
+        return int(np.ceil(len(self.hash_set) / float(self.batch_size)))
+    
+    def __getitem__(self, idx):
+        batch_hashes = self.hash_shuffled_array[:,idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_x, batch_y, batch_w = seq_trunc(batch_hashes, self.smiles_set, self.max_length, self.vocab_size)
+        if self.training:
+            return batch_x, batch_y, batch_w
+        else:
+            return batch_x
+##
+
+## Custom metric 
+class CxUxN(object):
+    """Implement CxUxN score calculation during training
+
+    Parameters
+    ----------
+    init_data: list
+        List of initial SMILES
+    data_name: str
+        Name of the dataset
+    vocab: list
+        List of tokens
+    gen_max_length: int
+        Maximum length of the generated SMILES
+    gpus: list
+        List of GPUs to use
+    model_init: keras model
+        Model to use for generation
+    n_generate: int
+        Number of SMILES to generate
+    warm_up: int
+        Number of epochs to wait before to start generation
+    batch_size: int
+        Batch size
+    print_fcn: function
+        Function to use for printing
+    model_dir: str
+        Path to the directory where the model is saved.
+    run: int
+        Number of the run
+    results_dir: str
+        Path to the directory where the results are saved.
+    verbose: bool
+        Whether to print the evaluation of a generation
+
+    Returns
+    -------
+    Evaluation of the generation through the CUN score
+    """
+    
+    def __init__(self, init_data, data_name, vocab, gen_max_length, gpus, model_init, n_generate = 1000, warm_up = 0, batch_size = 128, print_fcn = print, model_dir = None, run = 0, results_dir = None, verbose = False):
+        self.init_data_set = set(init_data)
+        self.data_name = data_name
+        self.gen_tokens = vocab
+        self.gen_max_length = gen_max_length
+        self.gpus = gpus
+        self.model_init = model_init
+        self.n_generate = n_generate
+        self.warm_up = warm_up
+        self.batch_size = batch_size
+        self.print_fcn = print_fcn
+        self.model_dir = model_dir
+        self.run = run
+        self.results_dir = results_dir
+        self.verbose = verbose
+        
+        # tokens to integers and vice versa
+        self.vocab_size = len(self.gen_tokens)
+        token_to_int = token.get_tokentoint(self.gen_tokens)
+        self.int_to_token = token.get_inttotoken(self.gen_tokens)
+        
+        self.pad_token_int = token_to_int['pad']
+        self.pre_token_int = token_to_int[' ']
+        self.suf_token_int = token_to_int[' ']
+        
+        # model loading on CPU
+        lstmunits = self.model_init.layers[2].output_shape[-1]//2
+        tdenseunits = self.model_init.layers[3].output_shape[-1]
+        embedding = self.model_init.layers[1].output_shape[-1]
+        with tf.device(self.gpus[-1].name):
+            K.clear_session()
+            # Model's architecture for generation
+            self.gen_model = model.LSTMAttModel.create(input_tokens = self.gen_max_length, 
+                                                       vocab_size = self.vocab_size, 
+                                                       embed_units = embedding, 
+                                                       lstm_units= lstmunits, 
+                                                       tdense_units = tdenseunits, 
+                                                       dense_depth=0, 
+                                                       model_type = 'multiclass_classification', 
+                                                       output_n_nodes = self.vocab_size)
+        
+        # Correctness, Uniqueness, Novelty, CxUxN score lists
+        self.cor_list = []
+        self.uniq_list = []
+        self.novel_list = []
+        self.cun_list = []
+        
+        # CxUxN score max and related epoch
+        self.cun_max = 0
+        self.best_epoch = 0
+        
+    ## CxUxN score evaluation
+    def evaluation(self, epoch):
+        if epoch >= self.warm_up:
+            start_time = time.time()
+
+            self.gen_model.load_weights('{}/{}_Model_Run_{}_Epoch_{:02d}.hdf5'.format(self.model_dir, self.data_name, self.run, epoch+1))
+
+            # array of temporary new SMILES
+            starter_row = np.array([self.pad_token_int]*(self.gen_max_length-1)+[self.pre_token_int])
+            new_smiles_tmp = np.copy(starter_row)
+            new_smiles_tmp = np.tile(new_smiles_tmp, (self.n_generate, 1))
+            # array of new SMILES to return
+            new_smiles = np.empty(shape=(0,self.gen_max_length), dtype=np.int16)
+            new_smiles_shape = new_smiles.shape[0]
+            ##
+
+            # Generate new SMILES
+            time_range = 0
+
+            #while time_range < 60: 
+            while new_smiles_shape < self.n_generate:
+                # shape: (batch_size, vocab_size) 
+                prior = self.gen_model.predict(DataSequence(smiles=new_smiles_tmp, 
+                                                            extra=None,
+                                                            props=None,
+                                                            batch_size=self.batch_size), 
+                                               max_queue_size = self.batch_size).astype('float64')
+                # extract a substitution to the prior
+                top_k = self.vocab_size
+                sub_prior = np.sort(prior)[:,-top_k:]
+                # extract top_k integered tokens with highest probability of occurence
+                sub_prior_tokens = np.argsort(prior)[:,-top_k:]
+
+                # shape: (n_generate,)
+                new_tokens = genutils.sample(sub_prior)
+                new_tokens = sub_prior_tokens[new_tokens]
+                new_smiles_tmp[:,:(self.gen_max_length-1)] = new_smiles_tmp[:,1:]
+                new_smiles_tmp[:,-1] = new_tokens
+                finished_smiles_idx_tmp = np.where(new_tokens == self.suf_token_int)[0].tolist()
+                unfinished_smiles_idx_tmp = np.where(new_tokens != self.suf_token_int)[0].tolist()
+                if len(finished_smiles_idx_tmp) != 0:
+                    new_smiles = np.append(new_smiles, 
+                                           new_smiles_tmp[finished_smiles_idx_tmp], 
+                                           axis=0)
+                    new_smiles_tmp = new_smiles_tmp[unfinished_smiles_idx_tmp]
+                    new_smiles_tmp = np.append(new_smiles_tmp, 
+                                               np.tile(np.copy(starter_row), 
+                                                       (len(finished_smiles_idx_tmp), 1)), 
+                                               axis = 0)
+                    new_smiles_shape = new_smiles.shape[0]
+
+                time_range = time.time() - start_time
+
+            new_smiles_list = list()
+            for ismiles in new_smiles:
+                smiles_tmp = list()
+                for itoken in ismiles: 
+                    smiles_tmp.append(self.int_to_token[itoken])
+                try:
+                    smi_tmp = genutils.join_tokens(genutils.remove_schar([smiles_tmp]))
+                    mol_tmp = Chem.MolFromSmiles(smi_tmp[0])
+                    smi_tmp = Chem.MolToSmiles(mol_tmp)
+                    new_smiles_list.append(smi_tmp)
+                except:
+                    continue
+
+            new_smiles_list_len = len(new_smiles_list)
+            if new_smiles_list_len > 0:
+                correctness = (new_smiles_list_len/self.n_generate)
+                unique_smiles = np.unique(new_smiles_list)
+                uniqueness = unique_smiles.shape[0]/float(new_smiles_list_len)
+                novelty = len(set(unique_smiles).difference(self.init_data_set))/unique_smiles.shape[0]
+
+                cun_val = (correctness * uniqueness * novelty)
+            else:
+                correctness = 0
+                uniqueness = 0
+                novelty = 0
+                cun_val = 0
+
+            # Keep the best CxUxN score with the related epoch in memory
+            if cun_val > self.cun_max:
+                self.cun_max = cun_val
+                self.best_epoch = epoch
+
+            # Update CxUxN scores list
+            self.cor_list.append(correctness)
+            self.uniq_list.append(uniqueness)
+            self.novel_list.append(novelty)
+            self.cun_list.append(cun_val)
+
+            if self.verbose:
+                verbose_time_range = time.time() - start_time
+                self.print_fcn("{{Epoch: {}}} {} generations, {} valid generations, CxUxN score: {:.2f} %, Duration: {:.3f} secs".format(epoch, 
+                                                                                                                                         new_smiles_shape, 
+                                                                                                                                         new_smiles_list_len, 
+                                                                                                                                         cun_val*100., 
+                                                                                                                                         verbose_time_range))
+            
+    def on_evaluation_end(self):
+        # Save best weights
+        shutil.copy('{}/{}_Model_Run_{}_Epoch_{:02d}.hdf5'.format(self.model_dir, self.data_name, self.run, self.best_epoch+1), 
+                    '{}/{}_Model_Run_{}_Best_Epoch.hdf5'.format(self.model_dir, self.data_name, self.run))
+        self.print_fcn("\nBest CxUxN score @ Epoch #{}\n".format(self.best_epoch))
+        # plot scores history
+        if self.model_dir is not None:
+            plt.plot(self.cor_list)
+            plt.plot(self.uniq_list)
+            plt.plot(self.novel_list)
+            plt.plot(self.cun_list)
+            plt.legend(['Correctness','Uniqueness','Novelty','CxUxN'], loc='lower right')
+            plt.ylabel('Score')
+            plt.title('')
+            plt.xlabel('Epoch')
+            plt.savefig('{}/{}_Model_Run_{}_History_CxUxN_score.png'.format(self.results_dir, self.data_name, self.run), bbox_inches='tight')
+            plt.close()
 ##
