@@ -434,7 +434,7 @@ class Generation(object):
                 posterior = sub_prior
             
             # shape: (n_generate,)
-            new_tokens = self.sample(posterior, temperature = diversity)
+            new_tokens = genutils.sample(posterior, temperature = diversity)
             new_tokens = sub_prior_tokens[new_tokens]
             new_smiles_tmp[:,:(self.gen_max_length-1)] = new_smiles_tmp[:,1:]
             new_smiles_tmp[:,-1] = new_tokens
