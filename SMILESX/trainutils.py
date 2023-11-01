@@ -22,7 +22,7 @@ logger = rkl.logger()
 logger.setLevel(rkl.ERROR)
 rkrb.DisableLog('rdApp.error')
 
-from SMILESX import token, model
+from SMILESX import token, model, genutils
 
 import matplotlib.pyplot as plt
 
@@ -545,38 +545,6 @@ class CxUxN(object):
         # CxUxN score max and related epoch
         self.cun_max = 0
         self.best_epoch = 0
-
-    ## Tools for generation
-    def normalize(self, preds, temperature=1.0):
-        preds = preds.astype('float64')
-        preds = np.log(preds) / temperature
-        exp_preds = np.exp(preds)
-        preds = exp_preds / np.sum(exp_preds, axis=1).reshape(-1,1)
-        return preds
-
-    # helper function to sample an index from a probability array
-    def sample(self, preds, temperature=1.0):
-        preds = self.normalize(preds, temperature)
-        probas = np.zeros(preds.shape)
-        for ipred in range(preds.shape[0]):
-            probas[ipred] = np.random.multinomial(1, preds[ipred], 1)[0]
-        return probas.astype('bool') #np.argmax(probas, axis=1)
-
-    # helper function to remove a token from a list of tokens
-    def remove_from_list(self, list_tmp, to_remove = ''): # list_tmp = list(list())
-        return [list(filter(lambda t: t != to_remove, ilist)) for ilist in list_tmp]
-
-    # helper function to remove 'pad', '!', 'E' characters
-    def remove_schar(self, list_tmp): # remove 'pad', '!', 'E' characters
-        list_tmp = self.remove_from_list(list_tmp, 'pad')
-        list_tmp = self.remove_from_list(list_tmp, '!')
-        list_tmp = self.remove_from_list(list_tmp, 'E')
-        return list_tmp
-
-    # helper function to join tokens
-    def join_tokens(self, list_tmp): 
-        list_tmp = [''.join(ismiles) for ismiles in list_tmp]
-        return list_tmp
         
     ## CxUxN score evaluation
     def evaluation(self, epoch):
@@ -612,7 +580,7 @@ class CxUxN(object):
                 sub_prior_tokens = np.argsort(prior)[:,-top_k:]
 
                 # shape: (n_generate,)
-                new_tokens = self.sample(sub_prior)
+                new_tokens = genutils.sample(sub_prior)
                 new_tokens = sub_prior_tokens[new_tokens]
                 new_smiles_tmp[:,:(self.gen_max_length-1)] = new_smiles_tmp[:,1:]
                 new_smiles_tmp[:,-1] = new_tokens
@@ -637,7 +605,7 @@ class CxUxN(object):
                 for itoken in ismiles: 
                     smiles_tmp.append(self.int_to_token[itoken])
                 try:
-                    smi_tmp = self.join_tokens(self.remove_schar([smiles_tmp]))
+                    smi_tmp = genutils.join_tokens(genutils.remove_schar([smiles_tmp]))
                     mol_tmp = Chem.MolFromSmiles(smi_tmp[0])
                     smi_tmp = Chem.MolToSmiles(mol_tmp)
                     new_smiles_list.append(smi_tmp)

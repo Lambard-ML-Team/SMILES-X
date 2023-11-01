@@ -18,7 +18,7 @@ import numpy as np
 import os
 import glob
 
-from SMILESX import model, inference, token, utils, trainutils, loadmodel
+from SMILESX import model, inference, token, utils, trainutils, loadmodel, genutils
 
 import tensorflow as tf
 from tensorflow.keras.utils import Sequence
@@ -47,6 +47,12 @@ class Generation(object):
         SMILES's augmentation at generator training (Default: False)
     infer_augmentation : bool   
         SMILES's augmentation at predictor training (Default: False)
+    infer_use_n_folds : int
+        number of folds to be considered for the predictor model. 
+        If put to None, all available folds are used for inference (Default: None)
+    infer_use_n_runs : int
+        number of runs to be considered for the predictor model. 
+        If put to None, all available runs are used for inference (Default: None)
     indir : str 
         directory of already trained prediction models (*.hdf5) and vocabulary (*.txt) (Default: './outputs')
     outdir : str
@@ -67,6 +73,8 @@ class Generation(object):
              g_run_number = 0,   
              gen_augmentation = False,
              infer_augmentation = False,
+             infer_use_n_folds = None,   
+             infer_use_n_runs = None,
              indir = "./output/",
              outdir = "./output/",
              vocab_name = 'vocab',
@@ -82,6 +90,8 @@ class Generation(object):
                  g_run_number = 0, 
                  gen_augmentation = False, 
                  infer_augmentation = False, 
+                 infer_use_n_folds = None,
+                 infer_use_n_runs = None,
                  indir = "./outputs", 
                  outdir = "./outputs", 
                  n_gpus = 1, 
@@ -101,6 +111,8 @@ class Generation(object):
         self.g_run_number = g_run_number
         self.gen_augmentation = gen_augmentation
         self.infer_augmentation = infer_augmentation
+        self.infer_use_n_folds = infer_use_n_folds
+        self.infer_use_n_runs = infer_use_n_runs
         self.indir = indir
         self.outdir = outdir
         self.prop_names_list = prop_names_list
@@ -160,6 +172,8 @@ class Generation(object):
                 nrun_infer_models = np.unique([int(imodel.split('_Run_')[1].split('.')[0]) for imodel in infer_models_tmp]).shape[0]
                 print("The {} directory contains {} runs per fold.\n".format(imodel_dir, nrun_infer_models))
         
+        print("{} fold(s) and {} run(s) will be used for each property inference on request.\n".format(self.infer_use_n_folds, self.infer_use_n_runs))
+
         # Predictor(s) initialization --- Put it later when GPU options get an external fonction
         if self.prop_names_list is not None:
             self.prop_names_list_len = len(self.prop_names_list)
@@ -167,6 +181,8 @@ class Generation(object):
             for iprop in range(self.prop_names_list_len):
                 infer_model_tmp = loadmodel.LoadModel(data_name = self.prop_names_list[iprop],
                                                         augment = self.infer_augmentation, 
+                                                        use_n_folds = self.infer_use_n_folds,
+                                                        use_n_runs = self.infer_use_n_runs,
                                                         outdir = indir,
                                                         gpu_name = self.gpus,
                                                         strategy = self.strategy, 
@@ -200,52 +216,7 @@ class Generation(object):
         print("*************************************")
         print("***Molecular generation initiated.***")
         print("*************************************\n")
-    
-    def p_to_one(self, dist):
-        # Convert a probability distribution to a one-hot vector
-        # dist is a 2D array where each row is a probability distribution
-        # Returns a 2D array where each row is a one-hot vector
-        if len(dist.shape) == 1:
-            dist = dist.reshape(1,-1)
-        return dist/np.sum(dist, axis=1).reshape(-1,1)
-    
-    def normalize(self, preds, temperature=1.0):
-        # Helper function to sample an index from a probability array
-        # Equivalent to p_to_one without temperature
-        preds = preds.astype('float64')
-        preds = np.log(preds) / temperature
-        exp_preds = np.exp(preds)
-        preds = exp_preds / np.sum(exp_preds, axis=1).reshape(-1,1)
-        return preds
-    
-    def softmax(self, x, axis=-1):
-        # Compute softmax values for each sets of scores in x
-        e_x = np.exp(x - np.max(x, axis=axis).reshape(-1,1))
-        return e_x / np.sum(e_x, axis=axis).reshape(-1,1)
-    
-    def sample(self, preds, temperature=1.0):
-        # Helper function to sample an index from a probability array
-        preds = self.normalize(preds, temperature)
-        probas = np.zeros(preds.shape)
-        for ipred in range(preds.shape[0]):
-            probas[ipred] = np.random.multinomial(1, preds[ipred], 1)[0]
-        return probas.astype('bool') #np.argmax(preds, axis=1)
-    
-    def remove_from_list(self, list_tmp, to_remove = ''): # list_tmp = list(list())
-        return [list(filter(lambda t: t != to_remove, ilist)) for ilist in list_tmp]
 
-    def remove_schar(self, list_tmp): # remove 'pad', '!', 'E' characters
-        list_tmp = self.remove_from_list(list_tmp, 'pad')
-        list_tmp = self.remove_from_list(list_tmp, '!')
-        list_tmp = self.remove_from_list(list_tmp, 'E')
-        return list_tmp
-
-    def join_tokens(self, list_tmp): 
-        list_tmp = [''.join(ismiles) for ismiles in list_tmp]
-        return list_tmp
-    
-    def t_cdf(self, x):
-        return stats.t.cdf(x, 10000)
     
     def display(self, prior, likelihood, posterior, int_tokens_list):
         # Display the prior, likelihood, and posterior distributions in a Jupyter notebook
@@ -424,7 +395,7 @@ class Generation(object):
                     smiles_tmp = list()
                     for itoken in ismiles: 
                         smiles_tmp.append(self.int_to_token[itoken])
-                        smi_tmp = self.join_tokens(self.remove_schar([smiles_tmp]))
+                        smi_tmp = genutils.join_tokens(genutils.remove_schar([smiles_tmp]))
                     new_smiles_list_tmp.append(smi_tmp[0])
 
                 lik_array = np.ones(shape=(n_generate,top_k), dtype='float64')
@@ -435,7 +406,7 @@ class Generation(object):
                                                     augment = False, 
                                                     batch_size = batch_size,
                                                     log_verbose = False)
-                    lik_array_tmp_mean = lik_array_tmp['mean'].values.astype('float64')#.reshape(-1,1)
+                    lik_array_tmp_mean = lik_array_tmp['mean'].values.astype('float64')
                     
                     ##
                     # Maximum likelihood
@@ -447,8 +418,8 @@ class Generation(object):
                     lik_array_tmp_std = np.ones(shape=lik_array_tmp.shape[0]) * tolerance
                     lik_min = (bounds_list[iinfer][0] - lik_array_tmp_mean) / lik_array_tmp_std
                     lik_max = (bounds_list[iinfer][1] - lik_array_tmp_mean) / lik_array_tmp_std
-                    p_gen_min = np.array(list(map(self.t_cdf, lik_min)))
-                    p_gen_max = np.array(list(map(self.t_cdf, lik_max)))
+                    p_gen_min = np.array(list(map(genutils.t_cdf, lik_min)))
+                    p_gen_max = np.array(list(map(genutils.t_cdf, lik_max)))
                     p_gen_in = p_gen_max - p_gen_min
                     p_gen_in[p_gen_in < np.finfo(np.float64).eps] = np.finfo(np.float64).eps
                     p_gen_in = p_gen_in.reshape(n_generate,top_k)
@@ -458,7 +429,7 @@ class Generation(object):
                     ##
 
                 posterior = (sub_prior**prior_gamma) * lik_array 
-                posterior = self.p_to_one(posterior)
+                posterior = genutils.p_to_one(posterior)
             else:
                 posterior = sub_prior
             
@@ -501,7 +472,7 @@ class Generation(object):
             smiles_tmp = list()
             for itoken in ismiles: 
                 smiles_tmp.append(self.int_to_token[itoken])
-                smi_tmp = self.join_tokens(self.remove_schar([smiles_tmp]))
+                smi_tmp = genutils.join_tokens(genutils.remove_schar([smiles_tmp]))
             try:
                 mol_tmp = Chem.MolFromSmiles(smi_tmp[0])
                 smi_tmp = Chem.MolToSmiles(mol_tmp)

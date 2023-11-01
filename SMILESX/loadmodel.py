@@ -51,6 +51,10 @@ class LoadModel:
         The name of the data used for training.
     augment: bool
         Whether augmentation has been used for training.
+    use_n_folds: int, optional
+        The number of folds to be used. If not specified, all available folds will be used. (Default: None)
+    use_n_runs: int, optional
+        The number of runs to be used. If not specified, all available runs will be used. (Default: None)
     outdir: str
         The path to the directory SMILES-X output directory. (Default: "./outputs")
     gpu_ind: int
@@ -76,6 +80,8 @@ class LoadModel:
     def __init__(self,
                  data_name: str,
                  augment: bool,
+                 use_n_folds: int = None,
+                 use_n_runs: int = None,
                  outdir: str = "./outputs",
                  use_cpu: bool = False,
                  gpu_ind: int = 0,
@@ -85,6 +91,8 @@ class LoadModel:
                  return_attention: bool = True):
         self.data_name = data_name
         self.augment = augment
+        self.use_n_folds = use_n_folds
+        self.use_n_runs = use_n_runs
         self.outdir = outdir
         self.gpu_ind = gpu_ind
         self.log_verbose = log_verbose
@@ -146,6 +154,22 @@ class LoadModel:
         n_models = len(glob.glob(model_dir + "/*"))
         self.k_fold_number = len(glob.glob(model_dir + "/*Model_Fold_*_Run_0.hdf5"))
         self.n_runs = len(glob.glob(model_dir + "/*Model_Fold_0_Run_*.hdf5"))
+
+        if self.use_n_folds is not None:
+            if self.use_n_folds > self.k_fold_number:
+                print("WARNING: the requested number of folds is greater than the available number of folds.")
+                print("The requested number of folds will be set to the maximum available number of folds.")
+                self.use_n_folds = self.k_fold_number
+            else:
+                self.k_fold_number = self.use_n_folds
+
+        if self.use_n_runs is not None:
+            if self.use_n_runs > self.n_runs:
+                print("WARNING: the requested number of runs is greater than the available number of runs.")
+                print("The requested number of runs will be set to the maximum available number of runs.")
+                self.use_n_runs = self.n_runs
+            else:
+                self.n_runs = self.use_n_runs
 
         print("\nAll the required model files have been found.")
         
