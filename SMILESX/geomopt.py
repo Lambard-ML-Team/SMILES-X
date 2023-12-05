@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import os
 import time
@@ -8,6 +7,7 @@ import glob
 import logging
 import datetime
 import itertools
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -294,8 +294,8 @@ def geom_prescore(data, extra, geom, extra_dim, dense_depth, vocab_size, max_len
         List of the least correlated weight for the requested geometry
     """
 
-    LOW = -5
-    HIGH = 0
+    LOW = -4
+    HIGH = 4
     window_size = HIGH-LOW
 
     while window_size != 0:

@@ -1,3 +1,6 @@
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
+
 import os
 import sys
 import math
@@ -38,12 +41,15 @@ def set_gpuoptions(n_gpus = 1,
     Parameters
     ----------
     ngpus: int
-        Number of GPUs to be used. (Default: 1)
+        Number of GPUs to be used.
+        (Default: 1)
     gpus_list: list, optional
         List of GPU IDs to be used, e.g. [0, 1, 2]. If `gpus_list` and `ngpus` 
-        are both provided, `gpus_list` prevails. (Default: None)
+        are both provided, `gpus_list` prevails.
+        (Default: None)
     gpus_debug: bool
-        Print out the GPUs ongoing usage. (Default: False)
+        Print out the GPUs ongoing usage.
+        (Default: False)
     print_fn: {logging.info, print}
         Print out function. Either logging.info or print options are accepted.
         (Default: logging.info)
@@ -321,6 +327,7 @@ def smiles_concat(smiles_list):
     concat_smiles_list
         List of concatenated SMILES, one per data point.
     """
+    
     concat_smiles_list = []
     for smiles in smiles_list:
         concat_smiles_list.append('j'.join([ismiles for ismiles in smiles if ismiles != '']))

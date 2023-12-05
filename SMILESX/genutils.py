@@ -1,17 +1,13 @@
-"""Add main docstring discription
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
+"""Functions used during the generation phase.
 """
-
-# Imports
 
 from scipy import stats
 import numpy as np
 
-np.random.seed(seed=123)
-
-##
-
-# Functions
+np.random.seed(seed=21)
 
 def p_to_one(dist):
     # Convert a probability distribution to a one-hot vector

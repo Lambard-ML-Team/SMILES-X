@@ -1,19 +1,6 @@
 __version__ = '2.1'
 __author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
-"""Add main docstring discription
-TODO(kathya): update the description
-This script allows the user to ...
-Ex. This tool accepts comma separated value files (.csv) as well as excel
-(.xls, .xlsx) files.
-Ex. This script requires that `pandas` be installed within the Python
-environment you are running this script in.
-Ex. This file can also be imported as a module and contains the following
-functions:
-    * get_spreadsheet_cols - returns the column headers of the file
-    * main - the main function of the script
-"""
-
 # TODO (Guillaume) : check redundant imports against main.py
 import os
 import sys
@@ -116,22 +103,23 @@ def main(data_smiles,
     #TODO(Guillaume): Add a caution message if already existing output results already exist
     #TODO(Guillaume): batchsize_pergpu option isn't used. Check it. 
     
-    '''SMILESX main pipeline
+    """SMILESX main pipeline
+    
     Parameters
-    ----------data_extra
-    data_smiles: single or multi columns pandas dataframe
+    ----------
+    data_smiles: pd.DataFrame
         A single or multiple columns pandas dataframe of SMILES as inputs.
-    data_prop: single column pandas dataframe
+    data_prop: pd.DataFrame
         A single column pandas dataframe of true property values as outputs, e.g. experimental measurements, etc. 
         It should have the same length than the provided set of input SMILES.
-    data_err: single or multi columns pandas dataframe
+    data_err: pd.DataFrame, optional
         A single column dataframe of standard deviations, or a two columns dataframe of minimum and maximum values, 
         related to the property values. It should have the same length than the provided set of input SMILES. 
         If standard deviations are provided, symmetric errorbars will be plotted in the output figures. 
         And if [min, max] ranges are provided, asymmetric error bars will be plotted in accordance 
         with the min and max values.
         (Default: None)
-    data_extra: single or multi columns pandas dataframe, optional
+    data_extra: pd.DataFrame, optional
         A single or multi columns pandas dataframe of additional input data intended to be used as extra descriptors 
         joined to the SMILES alone. It should have the same length than the provided set of input SMILES.
         (Default: None)
@@ -139,10 +127,10 @@ def main(data_smiles,
         Dataset name used for naming directories and files related to an intended study with the SMILES-X. 
         A good practice is to use the name of the dataset as a prefix for the output files and directories. 
         (Default: 'Test')
-    data_units: str
+    data_units: str, optional
         Desired output property's unit to be displayed in plots.
         (Default: '')
-    data_label: str
+    data_label: str, optional
         Desired output property's label to be displayed in plots. 
         The TeX formmat is supported according to the matplotlib's documentation (see 
         https://matplotlib.org/stable/gallery/text_labels_and_annotations/tex_demo.html).
@@ -154,35 +142,36 @@ def main(data_smiles,
     outdir: str
         Name of outputs directory. 
         (Default './outputs')
-    geomopt_mode: {'on', 'off'}, str
+    geomopt_mode: {'on', 'off'}
         Whether to apply a trainless geometry optimisation for the LSTM, time-distributed
         dense, and embedding layers. 
         (Default 'off')
-    bayopt_mode: {'on', 'off'}, str
+    bayopt_mode: {'on', 'off'}
         Whether to perform a Bayesian optimisation for the LSTM, time-distributed
         dense, and embedding layers, batch size and learning rate. If requested together with geometry
         optimisation, only batch size and learning rate will be optimized. 
         (Default: 'on')
-    train_mode: {'on', 'finetune', 'off'}, str
+    train_mode: {'on', 'finetune', 'off'}
         'on' for training from scratch on a given dataset.
         'finetune' for fine-tuning a pretrained model. Requires `pretrained_data_name` and `pretrained_augm`.
         'off' for just retrieving an existing trained model. 
         (Default: 'train')
-    pretrained_data_name: str
+    pretrained_data_name: str, optional
         The name of the data which was usd for pretraining
         (Default: '')
     pretrained_augm: bool
         Whether augmentation was used or not during pretraining. It is used to build the path to the 
         pretrained model. 
         (Default: False)
-    model_type: {'regression', 'classification'}, str 
-        Requests if the SMILES-X architecture should perform a regression, binary classification, or multiclass classification task.  
-        Basically, the activation function of the last layer will be set to 'linear', 'sigmoid', or 'softmax' respectively.
+    model_type: {'regression', 'classification'}
+        Requests if the SMILES-X architecture should perform a regression, binary classification,
+        or multiclass classification task. Basically, the activation function of the last layer 
+        will be set to 'linear', 'sigmoid', or 'softmax' respectively.
         (Default: 'regression') 
     scale_output: bool
-        Whether to scale the output property values or not. For binary classification tasks, it is recommended not to scale 
-        the categorical (e.g. 0, 1) output values. For regression tasks, this is preferable to guarantee quicker 
-        training convergence.
+        Whether to scale the output property values or not. For binary classification tasks,
+        it is recommended not to scale  the categorical (e.g. 0, 1) output values.
+        For regression tasks, this is preferable to guarantee quicker training convergence.
         (Default: True)
     embed_bounds: list(int)
         Bounds constraining the Bayesian search for optimal embedding dimensions. 
@@ -217,7 +206,7 @@ def main(data_smiles,
         (Default: 16)
     lr_ref: int
         User defined learning rate (no Bayesian optimisation) translated to the Adam optimizer as 
-        10**(-lr_ref). 
+        10^(-lr_ref). 
         (Default: 3.9)
     k_fold_number: int
         Number of folds used for a k-fold cross-validation. 
@@ -273,12 +262,13 @@ def main(data_smiles,
         Batch size used per GPU.
         If None, it is set in accordance with the augmentation statistics. 
         (Default: None)
-    lr_schedule: {'decay', 'clr', 'cosine'}, str, optional
+    lr_schedule: {'decay', 'clr', 'cosine'}, optional
         Learning rate schedule
-            'decay': step decay (see https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/schedules/ExponentialDecay)
-            'clr': cyclical (see https://arxiv.org/abs/1506.01186)
-            'cosine': cosine annealing (see https://arxiv.org/abs/1608.03983)
-             None: No learning rate schedule applied 
+            - 'decay': step decay (see https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/schedules/ExponentialDecay)
+            - 'clr': cyclical (see https://arxiv.org/abs/1506.01186)
+            - 'cosine': cosine annealing (see https://arxiv.org/abs/1608.03983)
+            - None: No learning rate schedule applied
+            
         (Default: None)
     bs_increase: bool
         Increase batch size econvert a list to a davery N steps (see https://arxiv.org/abs/1711.00489). 
@@ -299,21 +289,26 @@ def main(data_smiles,
         Verbosity during training. 0 = silent, 1 = progress bar, 2 = one line per epoch 
         (see https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit).
         (Default: 0)
+        
     Returns
     -------
+    
     For each fold and run the following outputs will be saved in outdir:
-        -- tokens list (vocabulary) -> *.txt
-        -- scaler -> *.pkl
-        -- geometry optimisation scores -> Scores.csv
-        -- list of optimized hyperparameters -> Optimized_Hyperparameters.csv
-        -- best architecture -> *.hdf5
-        -- training plot (loss vs epoch) ->convert a list to a da History_*.png
+        - tokens list (vocabulary, .txt)
+        - scaler (.pkl)
+        - geometry optimisation scores (.csv)
+        - list of optimized hyperparameters (.csv)
+        - best architecture (.hdf5)
+        - learning curves (.png) 
+
         For regression tasks:
-            -- predictions vs observations plot -> TrainValidTest_*.png
+            - predictions vs observations plots (all sets together, .png)
+
         For classification tasks:
-            -- Confusion matrix (CM) plot -> Train_CM_*.png, Valid_CM_*.png, Test_CM_*.png
-            -- Precision-Recall curve (PRC) plot -> Train_PRC_*.png, Valid_PRC_*.png, Test_PRC_*.png
-    '''
+            - confusion matrix (CM) plots for train, valid and test sets (.png)
+            - precision-recall curve (PRC) plots for train, valid and test sets (.png)
+            
+    """
 
     # TODO(katia): update Returns list above
     start_time = time.time()
@@ -555,7 +550,8 @@ def main(data_smiles,
             model_loss = 'binary_crossentropy'
         elif model_type == 'multiclass_classification':
             model_loss = 'sparse_categorical_crossentropy'
-        model_metrics = ['accuracy']
+#         model_metrics = ['accuracy']
+        model_metrics = [tf.keras.metrics.AUC()] # For BACE and other AUC-ROC-based tasks
      
     # Individual counter for the folds of interest in case of k_fold_index
     nfold = 0

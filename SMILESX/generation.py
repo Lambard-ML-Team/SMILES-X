@@ -1,19 +1,6 @@
 __version__ = '2.1'
 __author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
-"""Add main docstring description
-TODO(Guillaume): update the description
-This script allows the user to ...
-Ex. This tool accepts comma separated value files (.csv) as well as excel
-(.xls, .xlsx) files.
-Ex. This script requires that `pandas` be installed within the Python
-environment you are running this script in.
-Ex. This file can also be imported as a module and contains the following
-functions:
-    * get_spreadsheet_cols - returns the column headers of the file
-    * main - the main function of the script
-"""
-
 import numpy as np
 import os
 import glob
@@ -34,8 +21,7 @@ import matplotlib.pyplot as plt
 from IPython.display import clear_output
 
 class Generation(object):
-    '''
-    Class for SMILES generation directed by SMILES-X targeted properties inference
+    """Class for SMILES generation directed by SMILES-X targeted properties inference
 
     Attributes
     ----------
@@ -83,7 +69,7 @@ class Generation(object):
              gpus_debug = False,
              prop_names_list = None)
     Initialize the class Generation with the given parameters (see Attributes). 
-    '''
+    """
 
     def __init__(self, 
                  data_name, 
@@ -284,8 +270,8 @@ class Generation(object):
                  tolerance = 10, 
                  prop_gamma_list = None, 
                  prior_gamma = 1.):
-        '''
-        Generate SMILES from the model.
+        """Generate SMILES from the model.
+        
         starter: str
             String of tokens to start with (Default: None, i.e. random)
         n_generate: int 
@@ -311,7 +297,7 @@ class Generation(object):
         -------
         new_smiles_list: list
             List of generated SMILES
-        '''
+        """
 
         if self.prop_names_list is not None:
             if prop_gamma_list is None:

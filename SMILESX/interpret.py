@@ -1,17 +1,19 @@
-import numpy as np
-import pandas as pd
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
+
 import os
 import math
 import glob
-
 import logging
+
+import numpy as np
+import pandas as pd
 from tabulate import tabulate
+from typing import Optional
+from typing import List
 
 from rdkit import Chem
 from rdkit.Chem import Draw
-
-from typing import Optional
-from typing import List
 
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler

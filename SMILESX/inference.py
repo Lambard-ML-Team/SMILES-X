@@ -1,19 +1,17 @@
-"""Add main docstring discription
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
-"""
+import os
+import glob
+import logging
 
 import numpy as np
 import pandas as pd
-import os
-import glob
-
-import logging
 from tabulate import tabulate
-
-from rdkit import Chem
-
 from typing import Optional
 from typing import List
+
+from rdkit import Chem
 
 from tensorflow.keras import metrics
 from tensorflow.keras import backend as K

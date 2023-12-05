@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import time
 import numpy as np

@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import logging
 import itertools
@@ -33,13 +32,13 @@ def augmentation(data_smiles, indices, data_extra=None, data_prop=None, check_sm
     Returns
     -------
     smiles_enum
-        Array of augmented SMILES
+        Array of augmented SMILES.
     extra_enum
-        Array of related additional inputs
+        Array of related additional inputs.
     prop_enum
-        Array of related property inputs
+        Array of related property inputs.
     miles_enum_card    
-        Number of augmentation per SMILES
+        Number of augmentation per SMILES.
     """
 
     # Get the logger

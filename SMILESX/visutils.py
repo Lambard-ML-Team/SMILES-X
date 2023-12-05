@@ -1,3 +1,6 @@
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
+
 import logging
 import pandas as pd
 import numpy as np
@@ -9,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from sklearn.metrics import precision_recall_curve, auc, confusion_matrix
+from sklearn.metrics import precision_recall_curve, auc, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import roc_auc_score, average_precision_score
 
@@ -36,6 +39,7 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
         plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
     else:
         plt.ylabel('Loss (cross-entropy)', fontsize=18)
+        plt.ylabel('Loss (AUC-ROC)', fontsize=18)
     plt.xlabel('Epoch', fontsize=18)
     
     ax.plot(train_loss, color='#3783ad')
@@ -550,9 +554,12 @@ def plot_fit(trues, preds, errs_true, errs_pred, err_bars: str, save_dir: str, d
                 set_name = set_names.pop()
 
             fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
-
-            conf_mat = confusion_matrix(true, pred_class)
-            cm = ax.matshow(conf_mat)
+            # Confusion matrix building
+            confusion_matrix = metrics.confusion_matrix(y_classes, y_pclasses)
+            cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix,
+                                                        display_labels=['False','True'])
+            cm_display.plot(ax=axes[0],cmap=plt.cm.Blues)
+            
             for i in range(conf_mat.shape[0]):
                 for j in range(conf_mat.shape[1]):
                     ax.text(x=j, y=i, s=conf_mat[i, j], va='center', ha='center', size='xx-large')

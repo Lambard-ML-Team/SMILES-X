@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import collections
 
@@ -31,7 +30,6 @@ class SoftAttention(Layer):
             attention vector is returned. (Default: False)
         weight: int, optional
             The value of the shared constant weights used for layer initialization. (Default: None)
-            
         
         Examples
         --------
@@ -52,12 +50,10 @@ class SoftAttention(Layer):
     def build(self, input_shape):
         """Builds and initializes attention layer
         
-        If `geom_search` parameter is set to `True`, the weights are initialized 
-        with a shared constant value defined with `weight` parameter. If `geom_search`
-        is set to `False`, GlorotNormal weight initialization is applied.
+        If `geom_search` parameter is set to `True`, the weights are initialized with a shared constant value
+        defined with `weight` parameter. If `geom_search` is set to `False`, GlorotNormal weight initialization is applied.
         
-        Weights' tensor shape is (EMBED_SIZE, 1),
-        bias tensor shape is (MAX_TOKENS, 1).
+        Weights' tensor shape is (EMBED_SIZE, 1), bias tensor shape is (MAX_TOKENS, 1).
         
         Parameters
         ----------
@@ -78,17 +74,17 @@ class SoftAttention(Layer):
                                  initializer="zeros")
         super(SoftAttention, self).build(input_shape)
 
-    def create_padding_mask(self, input_):
+    def create_padding_mask(self, input_tensor):
         """ Creates a padding mask
         
         The create_padding_mask method takes a sequence as input and creates a mask matrix where 
         all the elements that are equal to 0 in the input sequence are set to 1, while all the other 
-        elements are set to 0. This is achieved using the K.cast(K(input_, 0), dtype='float32') function 
+        elements are set to 0. This is achieved using the K.cast(K(input_tensor, 0), dtype='float32') function 
         in TensorFlow. The output of this method is a mask matrix of the same shape as the input sequence.
 
         Parameters
         ----------
-        input_: tensor
+        input_tensor: tensor
             The input tensor of shape (batch_size, max_tokens)
 
         Returns
@@ -98,22 +94,23 @@ class SoftAttention(Layer):
 
         Examples
         --------
-        >>> input_ = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
-        >>> padding_mask = create_padding_mask(input_)
+        >>> input_tensor = tf.constant([[1, 2, 3, 0, 0],
+        ...                             [3, 4, 0, 0, 0]])
+        >>> padding_mask = create_padding_mask(input_tensor)
         >>> padding_mask
         <tf.Tensor: shape=(2, 5), dtype=float32, numpy=
         array([[0., 0., 0., 1., 1.],
-                [0., 0., 1., 1., 1.]], dtype=float32)>
+               [0., 0., 1., 1., 1.]], dtype=float32)>
         """
         
-        padding_mask = K.cast(K.equal(input_, 0), dtype='float32')
+        padding_mask = K.cast(K.equal(input_tensor, 0), dtype='float32')
         
         return padding_mask
     
-    def create_masks(self, input_):
-        """ Creates all masks
+    def create_masks(self, input_tensor):
+        """Creates all masks
 
-        The create_masks method takes an input sequence (input_) as input and 
+        The create_masks method takes an input tensor as input and 
         uses the create_padding_mask method to create a padding mask for the input sequence. 
         The padding mask is then multiplied by a negative value (-1e9) and returned as the output. 
         This is done to assign a very low attention weight to the padded positions in the sequence 
@@ -121,30 +118,32 @@ class SoftAttention(Layer):
 
         Parameters
         ----------
-        input_: tensor
+        input_tensor: tensor
             The input tensor of shape (batch_size, max_tokens)
 
         Returns
         -------
         masks: tensor
             The masks of shape (batch_size, max_tokens)
-
+            
         Examples    
         --------
-        >>> input_ = tf.constant([[1, 2, 3, 0, 0], [3, 4, 0, 0, 0]])
-        >>> masks = create_masks(input_)
+        >>> input_tensor = tf.constant([[1, 2, 3, 0, 0],
+        ...                             [3, 4, 0, 0, 0]])
+        >>> masks = create_masks(input_tensor)
         >>> masks
         <tf.Tensor: shape=(2, 5), dtype=float32, numpy=
         array([[0., 0., 0., -1e9, -1e9],
                 [0., 0., -1e9, -1e9, -1e9]], dtype=float32)>
+
         """
         
-        padding_mask = self.create_padding_mask(input_)
+        padding_mask = self.create_padding_mask(input_tensor)
         masks = padding_mask * -1e9 # additional masks can be added here
 
         return masks
 
-    def call(self, x, input_=None):
+    def call(self, x, input_tensor=None):
         """Computes an attention vector on an input matrix
         
         Collapses the tokens dimension by summing up the products of
@@ -160,20 +159,20 @@ class SoftAttention(Layer):
         ----------
         x: tensor
             The output from the time-distributed dense layer (batch_size, max_tokens, tdense_units).
-        input_: tensor (optional)
-            The input_ from which masks are created (batch_size, max_tokens).
+        input_tensor: tensor, optional
+            The input tensor from which masks are created (batch_size, max_tokens).
 
         Returns
         ------
         During training and prediction
             2D tensor of shape (batch_size, embed_size)
         During interpretation (visualization)
-            1D tensor of shape (max_tokens,)
+            1D tensor of shape (max_tokens, )
         """
         
         et = K.squeeze(K.tanh(K.dot(x, self.W) + self.b), axis=-1)
         
-        mask = self.create_masks(input_)
+        mask = self.create_masks(input_tensor)
         if mask is not None:
             et += mask
         at = K.softmax(et)

@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import re
 import ast
@@ -15,16 +14,16 @@ def int_vec_encode(tokenized_smiles_list, max_length, vocab):
     Parameters
     ----------
     tokenized_smiles_list: list(list(str))
-        List of tokenized SMILES, where every list(str) corresponds to a single SMILES
+        List of tokenized SMILES, where every list(str) corresponds to a single SMILES.
     max_length: int
         Maximum SMILES length
     vocab:
-        Vocabulary, or a list of all possible tokens contained within the data
+        Vocabulary, or a list of all possible tokens contained within the data.
 
     Returns
     -------
     int_smiles_array: np.array
-        Numpy array of encoded SMILES of shape (len(tokenized_smiles_list), max_length)
+        Numpy array of encoded SMILES of shape (len(tokenized_smiles_list), max_length).
     """
 
     token_to_int = get_tokentoint(vocab)
@@ -168,7 +167,7 @@ def save_vocab(vocab, tokens_file):
     vocab: list
         List of tokens formin vocabulary
     tokens_file: str
-        Name of the file to store the vocabulary (*.txt)
+        Name of the file to store the vocabulary (.txt)
     """
 
     with open(tokens_file,'w') as f:
@@ -181,7 +180,7 @@ def get_vocab(tokens_file):
     Parameters
     ----------
     tokens_file
-        Text file name with directory in which the vocabulary is saved (*.txt)
+        Text file name with directory in which the vocabulary is saved (.txt)
 
     Returns
     -------

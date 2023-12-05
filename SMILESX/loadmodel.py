@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import os
 import glob
@@ -28,8 +27,7 @@ from tensorflow.keras import backend as K
 from SMILESX import utils, model, token, augm
 
 class LoadModel:
-    """
-    Load an ensemble of trained models.
+    """Load an ensemble of trained models.
 
     Collects all the available trained models for a given dataset.
     Allows to keep the collected models in memory for multiple utilisation.
@@ -38,9 +36,10 @@ class LoadModel:
 
     Verifies the availability of all the necessary files in the requested directory at initilisation.
     The following conditions must be fulfilled:
-    -- Vocabulary file must exist.
-       Without vocabulary file SMILES cannot be properly tokenized to be fed into a model.
-    -- The number of scalers for the output data and additional input data (if used) should match.
+
+        - Vocabulary file must exist.
+          Without vocabulary file SMILES cannot be properly tokenized to be fed into a model.
+        - The number of scalers for the output data and additional input data (if used) should match.
 
     The number of folds `k_fold_number` and/or `n_runs` are automatically set based on the number of scalers 
     in the `Train/Other/Scalers/` directory.
@@ -52,23 +51,31 @@ class LoadModel:
     augment: bool
         Whether augmentation has been used for training.
     use_n_folds: int, optional
-        The number of folds to be used. If not specified, all available folds will be used. (Default: None)
+        The number of folds to be used. If not specified, all available folds will be used.
+        (Default: None)
     use_n_runs: int, optional
-        The number of runs to be used. If not specified, all available runs will be used. (Default: None)
+        The number of runs to be used. If not specified, all available runs will be used.
+        (Default: None)
     outdir: str
-        The path to the directory SMILES-X output directory. (Default: "./outputs")
+        The path to the directory SMILES-X output directory.
+        (Default: "./outputs")
     gpu_ind: int
-        The index of the GPU to be used. (single GPU usage only). (Default: 0)
+        The index of the GPU to be used (single GPU usage only).
+        (Default: 0)
     gpu_name: str, optional
-        The name of the GPU to be used. (Default: None)
+        The name of the GPU to be used.
+        (Default: None)
     strategy:
-        Memory growth strategy. (Default: None)
+        Memory growth strategy.
+        (Default: None)
     log_verbose: bool
         Whether to output the logs to the console. If set to False, outputs will be
-        directed towards the logfile only. (Default: True)
+        directed towards the logfile only.
+        (Default: True)
     return_attention: bool
         If `True`, collect full models (e.g., for inference). Otherwise collect 
-        truncated models (e.g., for interpretation). (Default: True)
+        truncated models (e.g., for interpretation).
+        (Default: True)
 
     Returns
     -------

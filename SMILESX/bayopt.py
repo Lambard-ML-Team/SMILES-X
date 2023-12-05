@@ -1,6 +1,5 @@
-"""Add main docstring discription
-
-"""
+__version__ = '2.1'
+__author__ = 'Guillaume Lambard, Ekaterina Gracheva'
 
 import os
 import time
@@ -20,7 +19,7 @@ from tensorflow.keras.optimizers import Adam, SGD
 from SMILESX import utils, augm, token, model, trainutils
 
 def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_length, check_smiles, augmentation, hyper_bounds, hyper_opt, dense_depth, bo_rounds, bo_epochs, bo_runs, strategy, model_type, output_n_nodes, scale_output, pretrained_model=None):
-    '''Bayesian optimization of hyperparameters.
+    """Bayesian optimization of hyperparameters.
 
     Parameters
     ----------
@@ -76,7 +75,8 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
     -------
     hyper_opt: dictdata_prop
         Dictionary with hyperparameters updated with optimized values
-    '''
+    """
+    
     # Get the logger for smooth logging
     logger = logging.getLogger()
 
