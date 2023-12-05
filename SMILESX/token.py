@@ -9,7 +9,7 @@ import numpy as np
 
 from tensorflow.keras import backend as K
 
-def int_vec_encode(tokenized_smiles_list, max_length, vocab):
+def int_vec_encode(tokenized_smiles_list, max_length, vocab, padding=True):
     """Encodes SMILES as a vector of integers
 
     Parameters
@@ -20,6 +20,8 @@ def int_vec_encode(tokenized_smiles_list, max_length, vocab):
         Maximum SMILES length
     vocab:
         Vocabulary, or a list of all possible tokens contained within the data
+    padding: bool
+        If True, the SMILES are pre-padded to have the same length (default: True)
 
     Returns
     -------
@@ -28,17 +30,23 @@ def int_vec_encode(tokenized_smiles_list, max_length, vocab):
     """
 
     token_to_int = get_tokentoint(vocab)
-    int_smiles_array = np.zeros((len(tokenized_smiles_list), max_length), dtype=np.int32)
+    int_smiles_array = np.zeros((len(tokenized_smiles_list), max_length), dtype=np.int32) if padding else list()
     for csmiles,ismiles in enumerate(tokenized_smiles_list):
         ismiles_tmp = list()
-        if len(ismiles)<= max_length:
-            ismiles_tmp = ['pad']*(max_length-len(ismiles))+ismiles # Force output vectors to have same length
+        if padding:
+            if len(ismiles)<= max_length:
+                ismiles_tmp = ['pad']*(max_length-len(ismiles))+ismiles # Force output vectors to have same length
+            else:
+                ismiles_tmp = ismiles[-max_length:] # longer vectors are truncated (to be changed...)
         else:
-            ismiles_tmp = ismiles[-max_length:] # longer vectors are truncated (to be changed...)
+            ismiles_tmp = ismiles
         integer_encoded = [token_to_int[itoken] if(itoken in vocab) \
                            else token_to_int['unk']\
                            for itoken in ismiles_tmp]
-        int_smiles_array[csmiles] = integer_encoded
+        if padding:
+            int_smiles_array[csmiles] = integer_encoded
+        else:
+            int_smiles_array.append(integer_encoded)
 
     return int_smiles_array
 ##

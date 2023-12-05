@@ -144,7 +144,7 @@ class SoftAttention(Layer):
 
         return masks
 
-    def call(self, x, input_=None):
+    def call(self, x, input_):
         """Computes an attention vector on an input matrix
         
         Collapses the tokens dimension by summing up the products of
@@ -190,7 +190,7 @@ class SoftAttention(Layer):
         return (input_shape[0], input_shape[-1])
 
     def get_config(self):
-        """Get configration of the layer"""
+        """Get configuration of the layer"""
         base_config = super(SoftAttention, self).get_config()
         base_config['weight'] = self.weight
         return base_config
@@ -247,7 +247,7 @@ class LSTMAttModel:
                model_type = 'regression', 
                output_n_nodes = 1):
 
-        smiles_input = Input(shape=(int(input_tokens),), name="smiles")
+        smiles_input = Input(shape=(int(input_tokens),), dtype='int16', name="smiles")
 
         # Initialize with constant weights during geometry search
         if geom_search:

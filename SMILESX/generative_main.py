@@ -301,8 +301,7 @@ def generative_main(data_smiles,
 
     # Reading the data
     header = []
-    data_smiles = data_smiles.replace([np.nan, None], ["", ""]).values
-    data_smiles = data_smiles.reshape(-1,1)
+    data_smiles = data_smiles.values
     header.extend(["SMILES"])
 
     # Default model type for the generative SMILES-X
@@ -311,14 +310,8 @@ def generative_main(data_smiles,
     err_bars = None
     extra_dim = None
     
-    # Initialize Predictions.txt and Scores.csv files
-    predictions = pd.DataFrame(data_smiles)
-    predictions.columns = header
-    scores_folds = []
-
     logging.info("***Configuration parameters:***")
     logging.info("")
-    logging.info("data =\n" + tabulate(predictions.head(), header))
     logging.info("data_name = \'{}\'".format(data_name))
     logging.info("smiles_concat = \'{}\'".format(smiles_concat))
     logging.info("outdir = \'{}\'".format(outdir))
@@ -420,18 +413,13 @@ def generative_main(data_smiles,
     model_loss = 'categorical_crossentropy'
     model_metrics = [metrics.categorical_accuracy, 
                      metrics.top_k_categorical_accuracy]
-    
-    # Keep track of the fold number for every data point ???
-    # predictions.loc[test_idx, 'Fold'] = ifold
 
     # Check/augment the data if requested
-    train_augm = augm.augmentation(data_smiles = data_smiles,
-                                   indices = np.arange(data_smiles.shape[0]),
-                                   check_smiles = check_smiles,
-                                   augment = augmentation)
-    
-    x_train_enum, _, y_train_enum, y_train_clean, x_train_enum_card, _ = train_augm
-    
+    x_train_enum, *_ = augm.augmentation(data_smiles = data_smiles,
+                                         indices = np.arange(data_smiles.shape[0]),
+                                         check_smiles = check_smiles,
+                                         augment = augmentation)
+        
     logging.info("Enumerated SMILES:")
     logging.info("\tTraining set: {}".format(len(x_train_enum)))
     logging.info("")
@@ -451,26 +439,20 @@ def generative_main(data_smiles,
     logging.info("")
 
     # Vocabulary size computation
-    all_smiles_tokens = x_train_enum_tokens
 
     # Check if the vocabulary for current dataset exists already
-    vocab_file = '{}/Other/{}_Vocabulary.txt'.format(main_save_dir, data_name)
-    if os.path.exists(vocab_file):
-        tokens = token.get_vocab(vocab_file)
+    main_vocab_file = '{}/Other/{}_Vocabulary.txt'.format(main_save_dir, data_name)
+    lm_vocab_file = '{}/{}_Vocabulary.txt'.format(other_dir, data_name)
+    if os.path.exists(main_vocab_file):
+        tokens = token.get_vocab(main_vocab_file)
+        token.save_vocab(tokens, lm_vocab_file)
     else:
         logging.info("No vocabulary file found for the current dataset.")
         logging.info("Extracting the vocabulary from the current dataset...")
         logging.info("")
-        tokens = token.extract_vocab(all_smiles_tokens)
-        vocab_file = '{}/{}_Vocabulary.txt'.format(other_dir, data_name)
-        token.save_vocab(tokens, vocab_file)
-        tokens = token.get_vocab(vocab_file)
-
-    # TODO(kathya): add info on how much previous model vocabs differ from the current data train/val/test vocabs
-    #               (for transfer learning)
-    train_unique_tokens = token.extract_vocab(x_train_enum_tokens)
-    logging.info("Number of tokens only present in training set: {}".format(len(train_unique_tokens)))
-    logging.info("")
+        tokens = token.extract_vocab(x_train_enum_tokens)
+        token.save_vocab(tokens, lm_vocab_file)
+        tokens = token.get_vocab(lm_vocab_file)
 
     # Add 'pad' (padding), 'unk' (unknown) tokens to the existing list
     tokens.insert(0,'unk')
@@ -480,20 +462,23 @@ def generative_main(data_smiles,
     n_class = len(tokens)
 
     logging.info("Full vocabulary: {}".format(tokens))
-    logging.info("Vocabulary size: {}".format(len(tokens)))
+    logging.info("Vocabulary size (pad, unk, and termination spaces included): {}".format(n_class))
     logging.info("")
 
     # Maximum of length of SMILES to process
-    all_smiles_tokens_len = [len(ismiles) for ismiles in all_smiles_tokens]
-    max_length = np.max(all_smiles_tokens_len)
-    median_length = np.median(all_smiles_tokens_len)
+    max_length = int(np.max(x_train_enum_tokens_len))
+    mean_length = int(np.mean(x_train_enum_tokens_len))
+    median_length = int(np.median(x_train_enum_tokens_len))
     logging.info("Maximum length of tokenized SMILES: {} tokens (termination spaces included)".format(max_length))
+    logging.info("Mean length of tokenized SMILES: {} tokens (termination spaces included)".format(mean_length))
+    logging.info("Median length of tokenized SMILES: {} tokens (termination spaces included)\n".format(median_length))
     logging.info("")
 
     # Convert tokenized SMILES to integer vectors
     x_train_enum_tokens_tointvec = token.int_vec_encode(tokenized_smiles_list=x_train_enum_tokens,
                                                         max_length=max_length + 1,
-                                                        vocab=tokens)
+                                                        vocab=tokens, 
+                                                        padding=False)
                                                         
     # Hyperparameters retrieval from the geometry optimisation
     logging.info("*** HYPERPARAMETERS RETRIEVAL ***")
@@ -584,7 +569,7 @@ def generative_main(data_smiles,
                 with strategy.scope():
                     model_train = model.LSTMAttModel.create(input_tokens=max_length+1,
                                                             extra_dim=extra_dim,
-                                                            vocab_size=len(tokens),
+                                                            vocab_size=n_class,
                                                             embed_units=hyper_opt["Embedding"],
                                                             lstm_units=hyper_opt["LSTM"],
                                                             tdense_units=hyper_opt["TD dense"],
@@ -598,7 +583,6 @@ def generative_main(data_smiles,
                     model_train.summary(print_fn=logging.info)
                     logging.info("\n")
 
-            batch_size = hyper_opt["Batch size"]
             if batchsize_pergpu is None:
                 batch_size_list = np.array([int(2**itn) for itn in range(3,11)])
                 batchsize_pergpu = batch_size_list[np.argmax((batch_size_list // median_length) == 1.)]
@@ -639,7 +623,7 @@ def generative_main(data_smiles,
             elif lr_schedule == 'clr':
                 clr = trainutils.CyclicLR(base_lr=lr_min,
                                           max_lr=lr_max,
-                                          step_size=8*(x_train_enum_tokens_tointvec.shape[0] // batchsize_pergpu),
+                                          step_size=8*(len(x_train_enum_tokens_tointvec) // batchsize_pergpu),
                                           mode='triangular')
                 callbacks_list.append(clr)
             elif lr_schedule == 'cosine':
@@ -653,7 +637,7 @@ def generative_main(data_smiles,
                 history = model_train.fit(\
                                 trainutils.LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
                                                            smiles_set = x_train_enum_tokens_tointvec,
-                                                           vocab_size = len(tokens),
+                                                           vocab_size = n_class,
                                                            max_length = max_length + 1,
                                                            batch_size=batch_size),
                                 shuffle=False,
@@ -700,21 +684,6 @@ def generative_main(data_smiles,
 
         logging.info("Evaluating performance of the trained model...")
         logging.info("")
-
-        # with tf.device(gpus[0].name):
-        #     K.clear_session()
-        #     model_train = load_model(filepath, custom_objects={'SoftAttention': model.SoftAttention()})
-        #     model_train.compile(loss = model_loss, optimizer=Adam(), metrics=model_metrics)
-
-        #     model_eval = model_train.evaluate(trainutils.LM_DataSequence(hash_set = x_train_enum_tokens_hash, 
-        #                                                       smiles_set = x_train_enum_tokens_tointvec, 
-        #                                                       vocab_size = len(tokens), 
-        #                                                       max_length = max_length+1, 
-        #                                                       batch_size = batchsize_pergpu), 
-        #                                       verbose = 0)
-
-        # logging.info("From the whole dataset:\n\t categorical_crossentropy loss: {0:0.4f} \n\t categorical accuracy: {1:0.4f} \n\t top_k_categorical accuracy (k=5): {2:0.4f}\n".\
-        #     format(model_eval[0], model_eval[1], model_eval[2]))
 
         end_run = time.time()
         elapsed_run = end_run - start_run

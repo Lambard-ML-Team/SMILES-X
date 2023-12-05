@@ -65,6 +65,12 @@ class DataSequence(Sequence):
         self.batch_size = int(batch_size)
         self.iepoch = 0
 
+        # Precompute indices for each batch
+        self.batch_indices = [
+            (i * self.batch_size, (i + 1) * self.batch_size) 
+            for i in range(self.__len__())
+        ]
+
     def on_epoch_end(self):
         self.iepoch += 1
         
@@ -72,11 +78,12 @@ class DataSequence(Sequence):
         return int(np.ceil(len(self.smiles) / float(self.batch_size)))
 
     def __getitem__(self, idx):
-        batch_smiles = self.smiles[idx * self.batch_size:(idx + 1) * self.batch_size]
+        start, end = self.batch_indices[idx]
+        batch_smiles = self.smiles[start:end]
         if self.props is not None:
-            batch_prop = self.props[idx * self.batch_size:(idx + 1) * self.batch_size]
+            batch_prop = self.props[start:end]
             if self.extra is not None:
-                batch_extra = self.extra[idx * self.batch_size:(idx + 1) * self.batch_size]
+                batch_extra = self.extra[start:end]
                 return {"smiles": batch_smiles, "extra": batch_extra}, batch_prop
             else:
                 return {"smiles": batch_smiles}, batch_prop
