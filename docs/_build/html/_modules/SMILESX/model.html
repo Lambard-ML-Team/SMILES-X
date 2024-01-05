@@ -1,0 +1,671 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMILESX.model &#8212; SMILES-X 2.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/SMILESX/model';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SMILES-X 2.1 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../index.html">
+                    Welcome to SMILES-X’s documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">SMILESX</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../SMILESX.html">SMILESX package</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X/issues/new?title=Issue%20on%20page%20%2F_modules/SMILESX/model.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for SMILESX.model</h1><div class="highlight"><pre>
+<span></span><span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.1&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Guillaume Lambard, Ekaterina Gracheva&#39;</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+
+<span class="kn">from</span> <span class="nn">tensorflow.keras</span> <span class="kn">import</span> <span class="n">backend</span> <span class="k">as</span> <span class="n">K</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.layers</span> <span class="kn">import</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">Embedding</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.layers</span> <span class="kn">import</span> <span class="n">Bidirectional</span><span class="p">,</span> <span class="n">TimeDistributed</span><span class="p">,</span> <span class="n">LSTM</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.layers</span> <span class="kn">import</span> <span class="n">concatenate</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<div class="viewcode-block" id="SoftAttention"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention">[docs]</a><span class="k">class</span> <span class="nc">SoftAttention</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom_search</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_prob</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes attention layer </span>
+
+<span class="sd">        Custom attention layer modified from https://github.com/sujitpal/eeap-examples</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        geom_search: bool</span>
+<span class="sd">            Whether the model is built for training/prediction or for trainless geometry search.</span>
+<span class="sd">            If `True`, weight are initialized with a shared constant value, which is set by</span>
+<span class="sd">            `weight` parameter. If `False`, GlorotNormal weight initialization is applied.</span>
+<span class="sd">            (Default: False)</span>
+<span class="sd">        return_prop: bool</span>
+<span class="sd">            Whether the model is used for training/prediction or for interpretation.</span>
+<span class="sd">            If `True`, a 2D tensor is returned during the call. If `False`, a 1D</span>
+<span class="sd">            attention vector is returned. (Default: False)</span>
+<span class="sd">        weight: int, optional</span>
+<span class="sd">            The value of the shared constant weights used for layer initialization. (Default: None)</span>
+<span class="sd">        </span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        Can be integrated within a model as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">        </span>
+<span class="sd">            enc = LSTM(embed_size, return_sequences=True)(...)</span>
+<span class="sd">            att = SoftAttention(geom_search=False, return_prob=False, weight=None)</span>
+<span class="sd">            att = att(enc, mask=None)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">geom_search</span> <span class="o">=</span> <span class="n">geom_search</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_prob</span> <span class="o">=</span> <span class="n">return_prob</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SoftAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SoftAttention.build"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.build">[docs]</a>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds and initializes attention layer</span>
+<span class="sd">        </span>
+<span class="sd">        If `geom_search` parameter is set to `True`, the weights are initialized with a shared constant value</span>
+<span class="sd">        defined with `weight` parameter. If `geom_search` is set to `False`, GlorotNormal weight initialization is applied.</span>
+<span class="sd">        </span>
+<span class="sd">        Weights&#39; tensor shape is (EMBED_SIZE, 1), bias tensor shape is (MAX_TOKENS, 1).</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_shape: tuple</span>
+<span class="sd">            Input tensor shape. Passed internally by Keras between layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">geom_search</span><span class="p">:</span>
+            <span class="n">att_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">att_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">GlorotNormal</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_weight</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;W_</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+                                 <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+                                 <span class="n">initializer</span><span class="o">=</span><span class="n">att_initializer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_weight</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;b_</span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+                                 <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
+                                 <span class="n">initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SoftAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SoftAttention.create_padding_mask"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.create_padding_mask">[docs]</a>    <span class="k">def</span> <span class="nf">create_padding_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Creates a padding mask</span>
+<span class="sd">        </span>
+<span class="sd">        The create_padding_mask method takes a sequence as input and creates a mask matrix where </span>
+<span class="sd">        all the elements that are equal to 0 in the input sequence are set to 1, while all the other </span>
+<span class="sd">        elements are set to 0. This is achieved using the K.cast(K(input_tensor, 0), dtype=&#39;float32&#39;) function </span>
+<span class="sd">        in TensorFlow. The output of this method is a mask matrix of the same shape as the input sequence.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_tensor: tensor</span>
+<span class="sd">            The input tensor of shape (batch_size, max_tokens)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        padding_mask: tensor</span>
+<span class="sd">            The padding mask of shape (batch_size, max_tokens)</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; input_tensor = tf.constant([[1, 2, 3, 0, 0],</span>
+<span class="sd">        ...                             [3, 4, 0, 0, 0]])</span>
+<span class="sd">        &gt;&gt;&gt; padding_mask = create_padding_mask(input_tensor)</span>
+<span class="sd">        &gt;&gt;&gt; padding_mask</span>
+<span class="sd">        &lt;tf.Tensor: shape=(2, 5), dtype=float32, numpy=</span>
+<span class="sd">        array([[0., 0., 0., 1., 1.],</span>
+<span class="sd">               [0., 0., 1., 1., 1.]], dtype=float32)&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">padding_mask</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">padding_mask</span></div>
+    
+<div class="viewcode-block" id="SoftAttention.create_masks"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.create_masks">[docs]</a>    <span class="k">def</span> <span class="nf">create_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates all masks</span>
+
+<span class="sd">        The create_masks method takes an input tensor as input and </span>
+<span class="sd">        uses the create_padding_mask method to create a padding mask for the input sequence. </span>
+<span class="sd">        The padding mask is then multiplied by a negative value (-1e9) and returned as the output. </span>
+<span class="sd">        This is done to assign a very low attention weight to the padded positions in the sequence </span>
+<span class="sd">        during further computations, effectively ignoring them.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        input_tensor: tensor</span>
+<span class="sd">            The input tensor of shape (batch_size, max_tokens)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        masks: tensor</span>
+<span class="sd">            The masks of shape (batch_size, max_tokens)</span>
+<span class="sd">            </span>
+<span class="sd">        Examples    </span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; input_tensor = tf.constant([[1, 2, 3, 0, 0],</span>
+<span class="sd">        ...                             [3, 4, 0, 0, 0]])</span>
+<span class="sd">        &gt;&gt;&gt; masks = create_masks(input_tensor)</span>
+<span class="sd">        &gt;&gt;&gt; masks</span>
+<span class="sd">        &lt;tf.Tensor: shape=(2, 5), dtype=float32, numpy=</span>
+<span class="sd">        array([[0., 0., 0., -1e9, -1e9],</span>
+<span class="sd">                [0., 0., -1e9, -1e9, -1e9]], dtype=float32)&gt;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">padding_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_padding_mask</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">)</span>
+        <span class="n">masks</span> <span class="o">=</span> <span class="n">padding_mask</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1e9</span> <span class="c1"># additional masks can be added here</span>
+
+        <span class="k">return</span> <span class="n">masks</span></div>
+
+<div class="viewcode-block" id="SoftAttention.call"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">input_tensor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes an attention vector on an input matrix</span>
+<span class="sd">        </span>
+<span class="sd">        Collapses the tokens dimension by summing up the products of</span>
+<span class="sd">        the each of the token&#39;s weights with corresponding to this token matrix values.</span>
+<span class="sd">        The weights are optimized during the training.</span>
+
+<span class="sd">        Dimensions:</span>
+<span class="sd">        et: (batch_size, max_tokens)</span>
+<span class="sd">        at: (batch_size, max_tokens)</span>
+<span class="sd">        ot: (batch_size, max_tokens, tdense_units)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: tensor</span>
+<span class="sd">            The output from the time-distributed dense layer (batch_size, max_tokens, tdense_units).</span>
+<span class="sd">        input_tensor: tensor, optional</span>
+<span class="sd">            The input tensor from which masks are created (batch_size, max_tokens).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ------</span>
+<span class="sd">        During training and prediction</span>
+<span class="sd">            2D tensor of shape (batch_size, embed_size)</span>
+<span class="sd">        During interpretation (visualization)</span>
+<span class="sd">            1D tensor of shape (max_tokens, )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">et</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_masks</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">et</span> <span class="o">+=</span> <span class="n">mask</span>
+        <span class="n">at</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">et</span><span class="p">)</span>
+
+        <span class="n">atx</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_prob</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">atx</span> <span class="c1"># For visualization of the attention weights</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ot</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">atx</span>
+            <span class="k">return</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ot</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># For prediction and training</span></div>
+
+<div class="viewcode-block" id="SoftAttention.compute_output_shape"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.compute_output_shape">[docs]</a>    <span class="k">def</span> <span class="nf">compute_output_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute output tensor shape&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SoftAttention.get_config"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.SoftAttention.get_config">[docs]</a>    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get configration of the layer&quot;&quot;&quot;</span>
+        <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SoftAttention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+        <span class="n">base_config</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span>
+        <span class="k">return</span> <span class="n">base_config</span></div></div>
+<span class="c1">##</span>
+
+<div class="viewcode-block" id="LSTMAttModel"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.LSTMAttModel">[docs]</a><span class="k">class</span> <span class="nc">LSTMAttModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds neural architecture of the SMILESX</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_tokens: int</span>
+<span class="sd">        Maximum length for the encoded and tokenized SMILES</span>
+<span class="sd">    vocab_size: int</span>
+<span class="sd">        Size of the vocabulary</span>
+<span class="sd">    embed_units: int</span>
+<span class="sd">        Dimension of the embedding</span>
+<span class="sd">    lstm_units: int</span>
+<span class="sd">        The number of LSTM units</span>
+<span class="sd">    tdense_units: int</span>
+<span class="sd">        The number of dense units</span>
+<span class="sd">    geom_search: bool</span>
+<span class="sd">        Whether to initialize the weight with shared constant for geometry search (Defaults: False)</span>
+<span class="sd">    return_prob: bool</span>
+<span class="sd">        Whether to return the attention vector or not (Default: False)</span>
+<span class="sd">    weight: int, float</span>
+<span class="sd">        The value of the shared constant weights used for layer initialization (Default: None)</span>
+<span class="sd">    model_type: str</span>
+<span class="sd">        The type of the model. Can be either &#39;regression&#39; (last_activation = &#39;linear&#39;), </span>
+<span class="sd">        &#39;binary_classification&#39; (last_activation = &#39;sigmoid&#39;), or &#39;multiclass_classification&#39; (last_activation = &#39;softmax&#39;). </span>
+<span class="sd">        For a molecular language modeling task, the model_type must be set to &#39;multiclass_classification&#39;. </span>
+<span class="sd">        (Default: &#39;regression&#39;)</span>
+<span class="sd">    output_n_nodes: int</span>
+<span class="sd">        The number of output nodes. (Default: 1 for regression and binary classification)</span>
+<span class="sd">        It equals to n_class (number of possible classes per output label) for multiclass classification.</span>
+<span class="sd">        It equals to the size of the vocabulary for a molecular language modeling task. </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    keras.Model</span>
+<span class="sd">        A model in the Keras API format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LSTMAttModel.create"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.model.LSTMAttModel.create">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">input_tokens</span><span class="p">,</span>
+               <span class="n">vocab_size</span><span class="p">,</span>
+               <span class="n">embed_units</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+               <span class="n">lstm_units</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+               <span class="n">tdense_units</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+               <span class="n">dense_depth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">extra_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">geom_search</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">return_prob</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">weight</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+               <span class="n">model_type</span> <span class="o">=</span> <span class="s1">&#39;regression&#39;</span><span class="p">,</span> 
+               <span class="n">output_n_nodes</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+
+        <span class="n">smiles_input</span> <span class="o">=</span> <span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">input_tokens</span><span class="p">),),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;smiles&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize with constant weights during geometry search</span>
+        <span class="k">if</span> <span class="n">geom_search</span><span class="p">:</span>
+            <span class="n">embeddings_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">RandomNormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">weight</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="n">weight</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">recurrent_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+            <span class="n">kernel_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+        <span class="c1"># Initialize for training</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">embeddings_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">he_uniform</span><span class="p">()</span>
+            <span class="n">recurrent_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">Orthogonal</span><span class="p">(</span><span class="n">gain</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">kernel_initializer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">GlorotUniform</span><span class="p">()</span>
+
+        <span class="n">embedding</span> <span class="o">=</span> <span class="n">Embedding</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">),</span>
+                              <span class="n">output_dim</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">embed_units</span><span class="p">),</span>
+                              <span class="n">input_length</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">input_tokens</span><span class="p">),</span>
+                              <span class="n">embeddings_initializer</span><span class="o">=</span><span class="n">embeddings_initializer</span><span class="p">)</span>
+        <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">embedding</span><span class="p">(</span><span class="n">smiles_input</span><span class="p">)</span>
+
+        <span class="c1"># Bidirectional LSTM layer</span>
+        <span class="n">lstm</span> <span class="o">=</span> <span class="n">Bidirectional</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lstm_units</span><span class="p">),</span>
+                             <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">,</span>
+                             <span class="n">recurrent_initializer</span><span class="o">=</span><span class="n">recurrent_initializer</span><span class="p">))</span>
+        <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">lstm</span><span class="p">(</span><span class="n">smiles_net</span><span class="p">)</span>
+
+        <span class="c1"># Time distributed layer</span>
+        <span class="n">timedist</span> <span class="o">=</span> <span class="n">TimeDistributed</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tdense_units</span><span class="p">),</span>
+                                         <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">))</span>
+        <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">timedist</span><span class="p">(</span><span class="n">smiles_net</span><span class="p">)</span>
+
+        <span class="c1"># Custom attention layer</span>
+        <span class="n">attention</span> <span class="o">=</span> <span class="n">SoftAttention</span><span class="p">(</span><span class="n">geom_search</span><span class="o">=</span><span class="n">geom_search</span><span class="p">,</span>
+                                  <span class="n">return_prob</span><span class="o">=</span><span class="n">return_prob</span><span class="p">,</span>
+                                  <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="s2">&quot;attention&quot;</span><span class="p">)</span>
+        <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">attention</span><span class="p">(</span><span class="n">smiles_net</span><span class="p">,</span> <span class="n">smiles_input</span><span class="p">)</span>
+
+        <span class="c1"># In case additional inputs of &#39;additional_input&#39; are added</span>
+        <span class="k">if</span> <span class="n">extra_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">extra_input</span> <span class="o">=</span> <span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">extra_dim</span><span class="p">),),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;extra&quot;</span><span class="p">)</span>
+            <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">([</span><span class="n">smiles_net</span><span class="p">,</span> <span class="n">extra_input</span><span class="p">])</span>
+
+        <span class="c1"># In case where additional nonlinearity is added after extra input</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dense_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">dense_depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">dense_units</span> <span class="o">=</span> <span class="n">tdense_units</span>
+            <span class="c1"># Accepts a list in case there user requests to extend the model with multiple layers</span>
+            <span class="k">for</span> <span class="n">dense</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dense_depth</span><span class="p">):</span>
+                <span class="n">dense_units</span><span class="o">=</span><span class="n">dense_units</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="c1"># Do not add layers consisting of a single unit</span>
+                <span class="k">if</span> <span class="n">dense_units</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dense_units</span><span class="p">),</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">)(</span><span class="n">smiles_net</span><span class="p">)</span>
+
+        <span class="c1"># Output layer</span>
+        <span class="n">last_activation</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;regression&#39;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;binary_classification&#39;</span><span class="p">:</span> <span class="s1">&#39;sigmoid&#39;</span><span class="p">,</span> <span class="s1">&#39;multiclass_classification&#39;</span><span class="p">:</span> <span class="s1">&#39;softmax&#39;</span><span class="p">}[</span><span class="n">model_type</span><span class="p">]</span>
+        <span class="n">smiles_net</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="n">output_n_nodes</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">last_activation</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">)(</span><span class="n">smiles_net</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">extra_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">smiles_input</span><span class="p">,</span> <span class="n">extra_input</span><span class="p">],</span>
+                          <span class="n">outputs</span><span class="o">=</span><span class="n">smiles_net</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">smiles_input</span><span class="p">],</span>
+                          <span class="n">outputs</span><span class="o">=</span><span class="n">smiles_net</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">model</span></div></div>
+<span class="c1">##</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Guillaume Lambard, Ekaterina Gracheva
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, Guillaume Lambard, Ekaterina Gracheva.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

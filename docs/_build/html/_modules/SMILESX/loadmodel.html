@@ -1,0 +1,605 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMILESX.loadmodel &#8212; SMILES-X 2.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/SMILESX/loadmodel';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SMILES-X 2.1 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../index.html">
+                    Welcome to SMILES-X’s documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">SMILESX</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../SMILESX.html">SMILESX package</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X/issues/new?title=Issue%20on%20page%20%2F_modules/SMILESX/loadmodel.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for SMILESX.loadmodel</h1><div class="highlight"><pre>
+<span></span><span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.1&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Guillaume Lambard, Ekaterina Gracheva&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">pickle</span> <span class="kn">import</span> <span class="n">load</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">rdkit</span> <span class="kn">import</span> <span class="n">Chem</span>
+
+<span class="c1"># Suppress Tensorflow warnings</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TF_CPP_MIN_LOG_LEVEL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="c1"># Ignore shape mismatch warnings related to the attention layer</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;ERROR&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">tensorflow.keras.models</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">load_model</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras</span> <span class="kn">import</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras</span> <span class="kn">import</span> <span class="n">backend</span> <span class="k">as</span> <span class="n">K</span>
+
+<span class="kn">from</span> <span class="nn">SMILESX</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">augm</span>
+
+<div class="viewcode-block" id="LoadModel"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.loadmodel.LoadModel">[docs]</a><span class="k">class</span> <span class="nc">LoadModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load an ensemble of trained models.</span>
+
+<span class="sd">    Collects all the available trained models for a given dataset.</span>
+<span class="sd">    Allows to keep the collected models in memory for multiple utilisation.</span>
+<span class="sd">    Full models are collected for inference, truncated models are collected for interpretation</span>
+<span class="sd">    (models are truncated at the level of attention, with attention vectors output).</span>
+
+<span class="sd">    Verifies the availability of all the necessary files in the requested directory at initilisation.</span>
+<span class="sd">    The following conditions must be fulfilled:</span>
+
+<span class="sd">        - Vocabulary file must exist.</span>
+<span class="sd">          Without vocabulary file SMILES cannot be properly tokenized to be fed into a model.</span>
+<span class="sd">        - The number of scalers for the output data and additional input data (if used) should match.</span>
+
+<span class="sd">    The number of folds `k_fold_number` and/or `n_runs` are automatically set based on the number of scalers </span>
+<span class="sd">    in the `Train/Other/Scalers/` directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_name: str</span>
+<span class="sd">        The name of the data used for training.</span>
+<span class="sd">    augment: bool</span>
+<span class="sd">        Whether augmentation has been used for training.</span>
+<span class="sd">    use_n_folds: int, optional</span>
+<span class="sd">        The number of folds to be used. If not specified, all available folds will be used.</span>
+<span class="sd">        (Default: None)</span>
+<span class="sd">    use_n_runs: int, optional</span>
+<span class="sd">        The number of runs to be used. If not specified, all available runs will be used.</span>
+<span class="sd">        (Default: None)</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        The path to the directory SMILES-X output directory.</span>
+<span class="sd">        (Default: &quot;./outputs&quot;)</span>
+<span class="sd">    gpu_ind: int</span>
+<span class="sd">        The index of the GPU to be used (single GPU usage only).</span>
+<span class="sd">        (Default: 0)</span>
+<span class="sd">    gpu_name: str, optional</span>
+<span class="sd">        The name of the GPU to be used.</span>
+<span class="sd">        (Default: None)</span>
+<span class="sd">    strategy:</span>
+<span class="sd">        Memory growth strategy.</span>
+<span class="sd">        (Default: None)</span>
+<span class="sd">    log_verbose: bool</span>
+<span class="sd">        Whether to output the logs to the console. If set to False, outputs will be</span>
+<span class="sd">        directed towards the logfile only.</span>
+<span class="sd">        (Default: True)</span>
+<span class="sd">    return_attention: bool</span>
+<span class="sd">        If `True`, collect full models (e.g., for inference). Otherwise collect </span>
+<span class="sd">        truncated models (e.g., for interpretation).</span>
+<span class="sd">        (Default: True)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A class containing a dictionary of trained models per fold per run,</span>
+<span class="sd">        output scalers, additional input data scalers if applicable, information</span>
+<span class="sd">        on the number of k-folds and runs, as well as training data path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">data_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                 <span class="n">use_n_folds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">use_n_runs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">outdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
+                 <span class="n">use_cpu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">gpu_ind</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">gpu_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">strategy</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">log_verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">return_attention</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span> <span class="o">=</span> <span class="n">data_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">augment</span> <span class="o">=</span> <span class="n">augment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_n_folds</span> <span class="o">=</span> <span class="n">use_n_folds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_n_runs</span> <span class="o">=</span> <span class="n">use_n_runs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outdir</span> <span class="o">=</span> <span class="n">outdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_ind</span> <span class="o">=</span> <span class="n">gpu_ind</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_verbose</span> <span class="o">=</span> <span class="n">log_verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span> <span class="o">=</span> <span class="n">return_attention</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/Train&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">,</span> <span class="s1">&#39;Augm&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment</span> <span class="k">else</span> <span class="s1">&#39;Can&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gpu_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="o">=</span> <span class="n">gpu_name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">strategy</span>
+        <span class="k">elif</span> <span class="n">use_cpu</span><span class="p">:</span>
+            <span class="c1"># CPUs options</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">set_gpuoptions</span><span class="p">(</span><span class="n">n_gpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                            <span class="n">gpus_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                            <span class="n">print_fn</span><span class="o">=</span><span class="nb">print</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># GPUs options</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpus</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">set_gpuoptions</span><span class="p">(</span><span class="n">n_gpus</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                            <span class="n">gpus_list</span><span class="o">=</span><span class="p">[</span><span class="n">gpu_ind</span><span class="p">],</span>
+                                                            <span class="n">gpus_debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                            <span class="n">print_fn</span><span class="o">=</span><span class="nb">print</span><span class="p">)</span>
+        <span class="c1"># Verify path existance</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Path </span><span class="si">{}</span><span class="s2"> does not exist.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HINT: check the data name and the augmentation flag.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*** LOADING ABORTED ***&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">utils</span><span class="o">.</span><span class="n">StopExecution</span>
+            
+        <span class="c1"># Verify existance of vocabulary file</span>
+        <span class="n">vocab_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/Other/</span><span class="si">{}</span><span class="s1">_Vocabulary.txt&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">vocab_file</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The input directory does not contain any vocabulary (*_Vocabulary.txt file).</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*** LOADING ABORTED ***&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">utils</span><span class="o">.</span><span class="n">StopExecution</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vocab_file</span> <span class="o">=</span> <span class="n">vocab_file</span>
+        
+        <span class="c1"># Load the model_type and the n_class</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/Other/</span><span class="si">{}</span><span class="s1">_model_type.txt&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_class</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        
+        <span class="n">scaler_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span> <span class="o">+</span> <span class="s1">&#39;/Other/Scalers&#39;</span>
+        <span class="n">model_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_dir</span> <span class="o">+</span> <span class="s1">&#39;/Models&#39;</span>
+        
+        <span class="c1"># Check whether additional data have been used for training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_output</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">n_output_scalers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">scaler_dir</span> <span class="o">+</span> <span class="s2">&quot;/*Outputs*&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">n_output_scalers</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale_output</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">n_extra_scalers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">scaler_dir</span> <span class="o">+</span> <span class="s2">&quot;/*Extra*&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">n_extra_scalers</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">model_dir</span> <span class="o">+</span> <span class="s2">&quot;/*&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_fold_number</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">model_dir</span> <span class="o">+</span> <span class="s2">&quot;/*Model_Fold_*_Run_0.hdf5&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_runs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">model_dir</span> <span class="o">+</span> <span class="s2">&quot;/*Model_Fold_0_Run_*.hdf5&quot;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_folds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_folds</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_fold_number</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: the requested number of folds is greater than the available number of folds.&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The requested number of folds will be set to the maximum available number of folds.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_n_folds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_fold_number</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">k_fold_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_folds</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_runs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_runs</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_runs</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: the requested number of runs is greater than the available number of runs.&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The requested number of runs will be set to the maximum available number of runs.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_n_runs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_runs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_runs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_n_runs</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">All the required model files have been found.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Load tokens from vocabulary file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">get_vocab</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vocab_file</span><span class="p">)</span>
+        <span class="c1"># Add &#39;pad&#39;, &#39;unk&#39; tokens to the existing list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;unk&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;pad&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Setting up the scalers, trained models, and vocabulary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">att_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_output</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_scaler_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra_scaler_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Start loading models</span>
+        <span class="k">for</span> <span class="n">ifold</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k_fold_number</span><span class="p">):</span>
+            <span class="n">fold_model_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fold_att_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_runs</span><span class="p">):</span>
+                <span class="n">K</span><span class="o">.</span><span class="n">clear_session</span><span class="p">()</span>
+                <span class="n">model_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_Model_Fold_</span><span class="si">{}</span><span class="s1">_Run_</span><span class="si">{}</span><span class="s1">.hdf5&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">,</span> <span class="n">ifold</span><span class="p">,</span> <span class="n">run</span><span class="p">)</span>
+                <span class="n">model_tmp</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;SoftAttention&#39;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">SoftAttention</span><span class="p">()})</span>
+                <span class="n">fold_model_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_tmp</span><span class="p">)</span>
+
+                <span class="c1"># Retrieve max_length</span>
+                <span class="k">if</span> <span class="n">ifold</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">run</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Maximum of length of SMILES to process</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">model_tmp</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="c1"># For the attention, collect truncated</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span><span class="p">:</span>
+                    <span class="c1"># Retrieve the geometry based on the trained model</span>
+                    <span class="n">embed_att</span> <span class="o">=</span> <span class="n">model_tmp</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;embedding&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">lstm_att</span> <span class="o">=</span> <span class="n">model_tmp</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;bidirectional&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+                    <span class="n">tdense_att</span> <span class="o">=</span> <span class="n">model_tmp</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;time_distributed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                    <span class="c1"># Architecture to return attention weights</span>
+                    <span class="n">K</span><span class="o">.</span><span class="n">clear_session</span><span class="p">()</span>
+                    <span class="n">att_tmp</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">LSTMAttModel</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">input_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
+                                                        <span class="n">vocab_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">),</span>
+                                                        <span class="n">embed_units</span><span class="o">=</span><span class="n">embed_att</span><span class="p">,</span>
+                                                        <span class="n">lstm_units</span><span class="o">=</span><span class="n">lstm_att</span><span class="p">,</span>
+                                                        <span class="n">tdense_units</span><span class="o">=</span><span class="n">tdense_att</span><span class="p">,</span>
+                                                        <span class="n">dense_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                        <span class="n">return_prob</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">att_tmp</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_mismatch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">intermediate_layer_model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">att_tmp</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;smiles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+                                                     <span class="n">outputs</span><span class="o">=</span><span class="n">att_tmp</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="s1">&#39;attention&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+                    <span class="n">fold_att_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">intermediate_layer_model</span><span class="p">)</span>
+            
+            <span class="c1"># Save models for the current fold</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_dic</span><span class="p">[</span><span class="s1">&#39;Fold_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifold</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fold_model_list</span>
+            <span class="c1"># Save truncated models for the current fold if requested</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_attention</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">att_dic</span><span class="p">[</span><span class="s1">&#39;Fold_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifold</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fold_att_list</span>
+            
+            <span class="c1"># Collect the scalers</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_output</span><span class="p">:</span>
+                <span class="n">output_scaler_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_Scaler_Outputs_Fold_</span><span class="si">{}</span><span class="s1">.pkl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scaler_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">,</span> <span class="n">ifold</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_scaler_dic</span><span class="p">[</span><span class="s2">&quot;Fold_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifold</span><span class="p">)]</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">output_scaler_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="p">:</span>
+                <span class="n">extra_scaler_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_Scaler_Extra_Fold_</span><span class="si">{}</span><span class="s1">.pkl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scaler_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_name</span><span class="p">,</span> <span class="n">ifold</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">extra_scaler_dic</span><span class="p">[</span><span class="s2">&quot;Fold_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifold</span><span class="p">)]</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">extra_scaler_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+                
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">*** MODELS LOADED ***&quot;</span><span class="p">)</span></div>
+<span class="c1">##</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Guillaume Lambard, Ekaterina Gracheva
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, Guillaume Lambard, Ekaterina Gracheva.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

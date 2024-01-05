@@ -1,0 +1,556 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMILESX.augm &#8212; SMILES-X 2.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/SMILESX/augm';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SMILES-X 2.1 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../../index.html">
+                    Welcome to SMILES-X’s documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">SMILESX</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../SMILESX.html">SMILESX package</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X/issues/new?title=Issue%20on%20page%20%2F_modules/SMILESX/augm.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for SMILESX.augm</h1><div class="highlight"><pre>
+<span></span><span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;2.1&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Guillaume Lambard, Ekaterina Gracheva&#39;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">rdkit</span> <span class="kn">import</span> <span class="n">Chem</span>
+
+<span class="kn">from</span> <span class="nn">SMILESX</span> <span class="kn">import</span> <span class="n">utils</span>
+
+<div class="viewcode-block" id="augmentation"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.augm.augmentation">[docs]</a><span class="k">def</span> <span class="nf">augmentation</span><span class="p">(</span><span class="n">data_smiles</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">data_extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_prop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check_smiles</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Augmentation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_smiles:</span>
+<span class="sd">        SMILES array for augmentation</span>
+<span class="sd">    indices:</span>
+<span class="sd">        Indices of the SMILES array for augmentation</span>
+<span class="sd">    data_extra:</span>
+<span class="sd">        Corresponding extra data array for augmentation</span>
+<span class="sd">    data_prop:</span>
+<span class="sd">        Corresponding property array for augmentation (default: None)</span>
+<span class="sd">    check_smiles: bool</span>
+<span class="sd">        Whether to verify SMILES correctness via RDKit (default: True)</span>
+<span class="sd">    augment: bool</span>
+<span class="sd">        Whether to augment the data by atom rotation (default: False)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    smiles_enum</span>
+<span class="sd">        Array of augmented SMILES.</span>
+<span class="sd">    extra_enum</span>
+<span class="sd">        Array of related additional inputs.</span>
+<span class="sd">    prop_enum</span>
+<span class="sd">        Array of related property inputs.</span>
+<span class="sd">    miles_enum_card    </span>
+<span class="sd">        Number of augmentation per SMILES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Get the logger</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="n">augment</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">check_smiles</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Augmentation is requested, but SMILES checking via RDKit is set to False.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Augmentation cannot be performed on potentially invalid SMILES.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;*** AUGMENTATION ABORTED ***&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">utils</span><span class="o">.</span><span class="n">StopExecution</span>
+
+    <span class="n">smiles_enum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prop_enum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prop_clean</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">extra_enum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">smiles_enum_card</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">rejected_smiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">indices_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">csmiles</span><span class="p">,</span> <span class="n">ismiles</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_smiles</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">augment</span><span class="p">:</span>
+            <span class="n">enumerated_smiles</span> <span class="o">=</span> <span class="n">generate_smiles</span><span class="p">(</span><span class="n">ismiles</span><span class="p">,</span> <span class="n">rotate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">check_smiles</span><span class="p">:</span>
+                <span class="n">enumerated_smiles</span> <span class="o">=</span> <span class="n">generate_smiles</span><span class="p">(</span><span class="n">ismiles</span><span class="p">,</span> <span class="n">rotate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ismiles</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">ismiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">ismiles</span><span class="p">]</span>
+                <span class="n">enumerated_smiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">ismiles</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="kc">None</span> <span class="ow">in</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">enumerated_smiles</span><span class="p">):</span>
+            <span class="n">rejected_smiles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ismiles</span><span class="p">)</span>
+            <span class="n">indices_to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">csmiles</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Store indices where same index corresponds to the same orginal SMILES</span>
+            <span class="n">smiles_enum_card</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">csmiles</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">enumerated_smiles</span><span class="p">))</span>
+            <span class="n">smiles_enum</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">enumerated_smiles</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data_prop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">prop_enum</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">data_prop</span><span class="p">[</span><span class="n">csmiles</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">enumerated_smiles</span><span class="p">))</span>
+                <span class="n">prop_clean</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data_prop</span><span class="p">[</span><span class="n">csmiles</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">data_extra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">extra_enum</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">data_extra</span><span class="p">[</span><span class="n">csmiles</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">enumerated_smiles</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">smiles_enum</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;None of the provided SMILES is recognized as correct by RDKit.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;In case the SMILES data cannot be put to a correct format, set `check_smiles=False`.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;*Note: setting `check_smiles` to False disables augmentation.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;*** Process of inference is automatically aborted! ***&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">utils</span><span class="o">.</span><span class="n">StopExecution</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rejected_smiles</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Some of the provided SMILES are recognized as incorrect by RDKit.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;The following list of SMILES have been rejected:&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">rejected_smiles</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data_extra</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">extra_enum</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extra_enum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">extra_enum</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data_prop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">prop_enum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">prop_clean</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prop_enum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prop_enum</span><span class="p">)</span>
+        <span class="n">prop_clean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prop_clean</span><span class="p">)</span>
+    <span class="n">indices_clean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">indices_to_remove</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">smiles_enum</span><span class="p">,</span> <span class="n">extra_enum</span><span class="p">,</span> <span class="n">prop_enum</span><span class="p">,</span> <span class="n">prop_clean</span><span class="p">,</span> <span class="n">smiles_enum_card</span><span class="p">,</span> <span class="n">indices_clean</span></div>
+<span class="c1">##</span>
+
+<div class="viewcode-block" id="rotate_atoms"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.augm.rotate_atoms">[docs]</a><span class="k">def</span> <span class="nf">rotate_atoms</span><span class="p">(</span><span class="n">li</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rotate atoms&#39; index in a list.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    li: list</span>
+<span class="sd">        List to be rotated.</span>
+<span class="sd">    x: int</span>
+<span class="sd">        Index to be placed first in the list.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        A list of rotated atoms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">li</span><span class="p">[</span><span class="n">x</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">li</span><span class="p">):]</span><span class="o">+</span><span class="n">li</span><span class="p">[:</span><span class="n">x</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">li</span><span class="p">)])</span></div>
+<span class="c1">##</span>
+
+<div class="viewcode-block" id="generate_smiles"><a class="viewcode-back" href="../../SMILESX.html#SMILESX.augm.generate_smiles">[docs]</a><span class="k">def</span> <span class="nf">generate_smiles</span><span class="p">(</span><span class="n">smiles</span><span class="p">,</span> <span class="n">kekule</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">rotate</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate SMILES list</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    smiles: list(str)</span>
+<span class="sd">        SMILES list to be prepared.</span>
+<span class="sd">    kekule: bool</span>
+<span class="sd">        Kekulize option setup. (Default: False)</span>
+<span class="sd">    canon: bool</span>
+<span class="sd">        Canonicalize. (Default: True)</span>
+<span class="sd">    rotate: bool</span>
+<span class="sd">        Rotation of atoms&#39;s index for augmentation. (Default: False)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    smiles_augment: list</span>
+<span class="sd">        A list of augmented SMILES (non-canonical equivalents from canonical SMILES representation).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">output_augm</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">augms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Single SMILES per input</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smiles</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">smiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">smiles</span><span class="p">]</span>
+    <span class="c1"># Multiple SMILES per input (e.g., copolymers, additives, etc.)</span>
+    <span class="k">for</span> <span class="n">ismiles</span> <span class="ow">in</span> <span class="n">smiles</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ismiles</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">mols</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># only for this smiles augmenting and returning a list of augms</span>
+            <span class="n">ismiles_augm</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Get augmentations per SMILES</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolFromSmiles</span><span class="p">(</span><span class="n">ismiles</span><span class="p">)</span>
+                <span class="n">mols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+                <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">GetNumAtoms</span><span class="p">()</span>
+                <span class="n">n_atoms_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">nat</span> <span class="k">for</span> <span class="n">nat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="n">rotate</span><span class="p">:</span>
+                    <span class="n">canon</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">if</span> <span class="n">n_atoms</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">iatoms</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">):</span>
+                            <span class="n">n_atoms_list_tmp</span> <span class="o">=</span> <span class="n">rotate_atoms</span><span class="p">(</span><span class="n">n_atoms_list</span><span class="p">,</span> <span class="n">iatoms</span><span class="p">)</span>
+                            <span class="n">rot_mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">RenumberAtoms</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span> <span class="n">n_atoms_list_tmp</span><span class="p">)</span>
+                            <span class="n">mols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rot_mol</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">canon</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">mol</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">for</span> <span class="n">mol</span> <span class="ow">in</span> <span class="n">mols</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ismiles</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolToSmiles</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span>
+                                               <span class="n">isomericSmiles</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                               <span class="n">kekuleSmiles</span><span class="o">=</span><span class="n">kekule</span><span class="p">,</span>
+                                               <span class="n">rootedAtAtom</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                                               <span class="n">canonical</span><span class="o">=</span><span class="n">canon</span><span class="p">,</span>
+                                               <span class="n">allBondsExplicit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                               <span class="n">allHsExplicit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">ismiles</span><span class="o">=</span><span class="kc">None</span>
+                <span class="n">ismiles_augm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ismiles</span><span class="p">)</span>
+            <span class="c1"># Remove duplicates</span>
+            <span class="n">ismiles_augm</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ismiles_augm</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="c1"># Store augmentations for each of multiple SMILES provided for a single data point</span>
+            <span class="n">augms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ismiles_augm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">augms</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="p">])</span>
+    <span class="c1"># All the possible combinations of multiple augmented SMILES</span>
+    <span class="n">output_augm</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">au</span><span class="p">)</span> <span class="k">for</span> <span class="n">au</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">augms</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">output_augm</span></div>
+<span class="c1">##</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Guillaume Lambard, Ekaterina Gracheva
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, Guillaume Lambard, Ekaterina Gracheva.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

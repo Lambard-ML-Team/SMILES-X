@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SMILESX &#8212; SMILES-X 2.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="SMILESX package" href="SMILESX.html" />
+    <link rel="prev" title="Welcome to SMILES-X’s documentation!" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SMILES-X 2.1 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="index.html">
+                    Welcome to SMILES-X’s documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">SMILESX</a><input checked class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html">SMILESX package</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X/blob/main/../SMILESX/modules.rst?plain=1" target="_blank"
+   class="btn btn-sm btn-source-file-button dropdown-item"
+   title="Show source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-code"></i>
+  </span>
+<span class="btn__text-container">Show source</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Lambard-ML-Team/SMILES-X/issues/new?title=Issue%20on%20page%20%2Fmodules.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/modules.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>SMILESX</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="smilesx">
+<h1>SMILESX<a class="headerlink" href="#smilesx" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SMILESX.html">SMILESX package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.augm">SMILESX.augm module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.augm.augmentation"><code class="docutils literal notranslate"><span class="pre">SMILESX.augm.augmentation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.augm.generate_smiles"><code class="docutils literal notranslate"><span class="pre">SMILESX.augm.generate_smiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.augm.rotate_atoms"><code class="docutils literal notranslate"><span class="pre">SMILESX.augm.rotate_atoms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.bayopt">SMILESX.bayopt module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.bayopt.bayopt_run"><code class="docutils literal notranslate"><span class="pre">SMILESX.bayopt.bayopt_run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.embeddingvis">SMILESX.embeddingvis module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.embeddingvis.Embedding_Vis"><code class="docutils literal notranslate"><span class="pre">SMILESX.embeddingvis.Embedding_Vis()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.generation">SMILESX.generation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.data_name"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.data_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.g_run_number"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.g_run_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.gen_augmentation"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.gen_augmentation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.infer_augmentation"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.infer_augmentation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.infer_use_n_folds"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.infer_use_n_folds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.infer_use_n_runs"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.infer_use_n_runs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.indir"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.indir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.outdir"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.outdir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.n_gpus"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.n_gpus</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.gpus_list"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.gpus_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.gpus_debug"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.gpus_debug</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.prop_names_list"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.prop_names_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.display"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.generation.Generation.generate"><code class="docutils literal notranslate"><span class="pre">SMILESX.generation.Generation.generate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.generative_main">SMILESX.generative_main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.generative_main.generative_main"><code class="docutils literal notranslate"><span class="pre">SMILESX.generative_main.generative_main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.genutils">SMILESX.genutils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.join_tokens"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.join_tokens()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.normalize"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.p_to_one"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.p_to_one()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.remove_from_list"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.remove_from_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.remove_schar"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.remove_schar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.sample"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.softmax"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.softmax()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.genutils.t_cdf"><code class="docutils literal notranslate"><span class="pre">SMILESX.genutils.t_cdf()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.geomopt">SMILESX.geomopt module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.geomopt.geom_prescore"><code class="docutils literal notranslate"><span class="pre">SMILESX.geomopt.geom_prescore()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.geomopt.geom_score"><code class="docutils literal notranslate"><span class="pre">SMILESX.geomopt.geom_score()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.geomopt.geom_search"><code class="docutils literal notranslate"><span class="pre">SMILESX.geomopt.geom_search()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.inference">SMILESX.inference module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.inference.infer"><code class="docutils literal notranslate"><span class="pre">SMILESX.inference.infer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.interpret">SMILESX.interpret module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.interpret.get_similarity_map_from_weights"><code class="docutils literal notranslate"><span class="pre">SMILESX.interpret.get_similarity_map_from_weights()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.interpret.interpret"><code class="docutils literal notranslate"><span class="pre">SMILESX.interpret.interpret()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.loadmodel">SMILESX.loadmodel module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.loadmodel.LoadModel"><code class="docutils literal notranslate"><span class="pre">SMILESX.loadmodel.LoadModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.main">SMILESX.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.main.main"><code class="docutils literal notranslate"><span class="pre">SMILESX.main.main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.model">SMILESX.model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.model.LSTMAttModel"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.LSTMAttModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.LSTMAttModel.create"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.LSTMAttModel.create()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.build"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.build()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.call"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.call()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.compute_output_shape"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.compute_output_shape()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.create_masks"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.create_masks()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.create_padding_mask"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.create_padding_mask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.model.SoftAttention.get_config"><code class="docutils literal notranslate"><span class="pre">SMILESX.model.SoftAttention.get_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.token">SMILESX.token module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.extract_vocab"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.extract_vocab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.get_inttotoken"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.get_inttotoken()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.get_tokens"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.get_tokens()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.get_tokentoint"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.get_tokentoint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.get_vocab"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.get_vocab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.int_vec_encode"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.int_vec_encode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.onehot"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.onehot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.save_vocab"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.save_vocab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.token.smiles_tokenizer"><code class="docutils literal notranslate"><span class="pre">SMILESX.token.smiles_tokenizer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.trainutils">SMILESX.trainutils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CosineAnneal"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CosineAnneal</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CxUxN"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CxUxN</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CxUxN.evaluation"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CxUxN.evaluation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CxUxN.on_evaluation_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CxUxN.on_evaluation_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CyclicLR"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CyclicLR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CyclicLR.clr"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CyclicLR.clr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CyclicLR.on_batch_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CyclicLR.on_batch_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.CyclicLR.on_train_begin"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.CyclicLR.on_train_begin()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.DataSequence"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.DataSequence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.DataSequence.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.DataSequence.on_epoch_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.IgnoreBeginningSaveBest"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.IgnoreBeginningSaveBest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.IgnoreBeginningSaveBest.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.IgnoreBeginningSaveBest.on_epoch_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.IgnoreBeginningSaveBest.on_train_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.IgnoreBeginningSaveBest.on_train_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.LM_DataSequence"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.LM_DataSequence</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.LM_DataSequence.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.LM_DataSequence.on_epoch_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.LoggingCallback"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.LoggingCallback</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.LoggingCallback.on_epoch_begin"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.LoggingCallback.on_epoch_begin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.LoggingCallback.on_epoch_end"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.LoggingCallback.on_epoch_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.StepDecay"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.StepDecay</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.trainutils.seq_trunc"><code class="docutils literal notranslate"><span class="pre">SMILESX.trainutils.seq_trunc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.utils">SMILESX.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.StopExecution"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.StopExecution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.log_setup"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.log_setup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.mean_result"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.mean_result()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.rand_split"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.rand_split()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.robust_scaler"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.robust_scaler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.set_gpuoptions"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.set_gpuoptions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.utils.smiles_concat"><code class="docutils literal notranslate"><span class="pre">SMILESX.utils.smiles_concat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX.visutils">SMILESX.visutils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.classification_metrics"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.classification_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.error_format"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.error_format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.learning_curve"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.learning_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.lm_metric_curve"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.lm_metric_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.output_prec"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.output_prec()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.plot_fit"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.plot_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.print_stats"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.print_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.sigma_classification_metrics"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.sigma_classification_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.sigma_mae"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.sigma_mae()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.sigma_r2"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.sigma_r2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SMILESX.html#SMILESX.visutils.sigma_rmse"><code class="docutils literal notranslate"><span class="pre">SMILESX.visutils.sigma_rmse()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SMILESX.html#module-SMILESX">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Welcome to SMILES-X’s documentation!</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="SMILESX.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">SMILESX package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Guillaume Lambard, Ekaterina Gracheva
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, Guillaume Lambard, Ekaterina Gracheva.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
