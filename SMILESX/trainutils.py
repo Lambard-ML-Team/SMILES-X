@@ -32,7 +32,7 @@ np.random.seed(seed=123)
 np.set_printoptions(precision=3)
 
 class DataSequence(Sequence):
-    """Split data into batches for trainin
+    """Splits data into batches for training.
 
     Parameters
     ----------
@@ -93,7 +93,7 @@ class DataSequence(Sequence):
 
 class CyclicLR(Callback):
     """
-    Implement a cyclical learning rate policy.
+    Implements a cyclical learning rate policy.
     
     The method is presented by Leslie N. Smith in the paper
     'Cyclical learning rates for training neural networks' (IEEE WACV, 2017)
@@ -115,26 +115,31 @@ class CyclicLR(Callback):
     ----------
         base_lr: float
             Initial learning rate which is the lower boundary in the cycle.
-            (Default 0.001)
+            (Default: 0.001)
         max_lr: float
             Upper boundary for the learning rate used for amplitude calculation,
-            may not be actually reached. (Default 0.006)
+            may not be actually reached. 
+            (Default: 0.006)
         step_size: int
             Number of training iterations per half cycle. Authors suggest setting 
-            `step_size` to 2-8 x training iterations per epoch. (Default 2000)
+            `step_size` to 2-8 x training iterations per epoch.
+            (Default: 2000)
         mode: {'triangular', 'triangular2', 'exp_range'}
             Policies which define the amplitude scaling as a function of iterations.
-            If `scale_fn` is not `None`, `mode` argument is ignored. (Default 'triangular')
+            If `scale_fn` is not `None`, `mode` argument is ignored.
+            (Default: 'triangular')
         gamma: float
             A constant used in 'exp_range' scaling function: gamma**(cycle iterations).
-            (Default 1.)
+            (Default: 1)
         scale_fn: lambda
             Custom scaling policy defined by a single argument lambda function,
             where 0 <= scale_fn(x) <= 1 for all x >= 0. If `scale_fn` is not `None`,
-            `mode` argument is ignored. (Default None)
+            `mode` argument is ignored.
+            (Default: None)
         scale_mode: {'cycle', 'iterations'}
             Defines whether `scale_fn` is evaluated based on cycle number or cycle 
-            iterations (training iterations since start of cycle). (Default 'cycle')
+            iterations (training iterations since start of cycle).
+            (Default: 'cycle')
             
     Examples
     --------
@@ -187,10 +192,7 @@ class CyclicLR(Callback):
 
     def _reset(self, new_base_lr=None, new_max_lr=None,
                new_step_size=None):
-        """Resets cycle iterations
-        
-        Optional boundary/step size adjustment
-        """
+        #Resets cycle iterations. Optional boundary/step size adjustment.
         
         if new_base_lr != None:
             self.base_lr = new_base_lr
@@ -231,19 +233,23 @@ class CyclicLR(Callback):
         K.set_value(self.model.optimizer.lr, self.clr())
 
 class StepDecay():
-    """Step decay the learning rate during training
+    """Step decay the learning rate during training.
     
     Parameters
     ----------
     initAlpha: float
-        Initial learning rate. (Default 1e-3)
+        Initial learning rate.
+        (Default 1e-3)
     finalAlpha: float
-        Final learning rate. (Default 1e-5)
+        Final learning rate.
+        (Default 1e-5)
     gamma: float
         NewAlpha = initAlpha * (gamma ** exp), where `exp` is determined 
-        based on the desired number of epochs. (Default 0.95)
+        based on the desired number of epochs.
+        (Default 0.95)
     epochs: int
-        Desired number of epochs for training. (Default 100)
+        Desired number of epochs for training.
+        (Default 100)
     """
 
     def __init__(self, initAlpha = 1e-3, finalAlpha = 1e-5, gamma = 0.95, epochs = 100):
@@ -284,7 +290,7 @@ class CosineAnneal(Callback):
 ##
 
 class LoggingCallback(Callback):
-    """Implement custom logging class to continue logging during training
+    """Implements custom logging class to continue logging during training.
     """
     
     # Callback that logs message at end of epoch.
@@ -306,7 +312,7 @@ class LoggingCallback(Callback):
 ##
 
 class IgnoreBeginningSaveBest(Callback):
-    """Save the best weights only after some number of epochs has been trained
+    """Save the best weights only after some number of epochs has been trained.
 
     Parameters
     ----------
@@ -315,17 +321,22 @@ class IgnoreBeginningSaveBest(Callback):
     n_epochs: int
         Number of epochs requested for training.
     best_loss: float
-        Best loss achieved so far. (Default: np.Inf)
+        Best loss achieved so far.
+        (Default: np.Inf)
     best_epoch: int
-        Number of the epoch with lowest validation loss achieved so far. (Default: 0)
+        Number of the epoch with lowest validation loss achieved so far.
+        (Default: 0)
     initial_epoch: int
-        The number of the initial epoch (needed for continuous training). (Default: 0)
+        The number of the initial epoch (needed for continuous training).
+        (Default: 0)
     ignore_first_epochs: int
         How many epochs to ignore in the beginning of the training before to start
-        registering the best validation loss. (Default 0)
+        registering the best validation loss.
+        (Default 0)
     last: bool
         In case of multi-step training, defines whether the last step is run.
-        Used for final printouts. (Default: False)
+        Used for final printouts.
+        (Default: False)
     """
 
     def __init__(self, filepath, n_epochs, best_loss = np.Inf, best_epoch = 0, initial_epoch=0, ignore_first_epochs=0, last = False):
@@ -376,22 +387,29 @@ class IgnoreBeginningSaveBest(Callback):
 ##
 
 def seq_trunc(hash_set, smiles_set, max_length, vocab_size):   
-    '''
-    To sequentially produce truncated SMILES of one token
+    """
+    Sequentially produces truncated SMILES of one token.
 
     Parameters
     ----------
-    hash_set: array of arrays of dimensions (3, number_of_SMILES)
-    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
-    max_length: maximum length of the SMILES
-    vocab_size: size of the vocabulary
+    hash_set: np.array
+        Array of arrays of dimensions (3, number_of_SMILES)
+    smiles_set: np.array
+        Array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
+    max_length: int
+        Maximum length of the SMILES.
+    vocab_size: int
+        Size of the vocabulary.
 
     Returns
     -------
-    Two arrays:
-            - Truncated SMILES
-            - One-hot vectored truncated token
-    '''
+    
+    batch_x: array
+        An array of truncated SMILES.
+    batch_y: array
+        An array of one-hot vectored truncated token.
+    batch_w: array
+    """
 
     batch_smiles = hash_set[0].tolist()
     batch_sampling = hash_set[1].tolist()
@@ -414,27 +432,34 @@ def seq_trunc(hash_set, smiles_set, max_length, vocab_size):
 ##
 
 class LM_DataSequence(Sequence):
-    '''
-    Data sequence to be fed to the neural network during training through batches of data
+    """
+    Data sequence to be fed to the neural network during training through batches of data.
 
     Parameters
     ----------
-    hash_set: array of arrays of dimensions (3, number_of_SMILES)
-    smiles_set: array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length)
-    vocab_size: size of the vocabulary
-    max_length: maximum length of the SMILES
-    batch_size: batch's size
-    training: set up the training mode (Default: True)
+    hash_set: array
+        Array of arrays of dimensions (3, number_of_SMILES).
+    smiles_set: array
+        Array of padded with zeros integered tokenized SMILES of dimensions (number_of_SMILES, max_length).
+    vocab_size: int
+        Size of the vocabulary.
+    max_length: int
+        Maximum length of the SMILES.
+    batch_size: int
+        Batch size.
+    training: bool
+        Set up the training mode.
+        (Default: True)
 
     Returns
     -------
-    In training mode, returns:
-            a batch of arrays of tokenized and encoded SMILES,
-            a batch of SMILES property
-    else, returns:
-            a batch of arrays of tokenized and encoded SMILES alone
-
-    '''
+    batch_x: array
+        A batch of arrays of tokenized and encoded SMILES.
+    batch_y: array
+        A batch of SMILES property (if `training=True`).
+    batch_w: array
+        A batch of weights
+    """
 
     def __init__(self, hash_set, smiles_set, vocab_size, max_length, batch_size, training = True):
         self.hash_set = hash_set
@@ -464,7 +489,7 @@ class LM_DataSequence(Sequence):
 
 ## Custom metric 
 class CxUxN(object):
-    """Implement CxUxN score calculation during training
+    """Implement CxUxN score calculation during training.
 
     Parameters
     ----------
@@ -499,7 +524,8 @@ class CxUxN(object):
 
     Returns
     -------
-    Evaluation of the generation through the CUN score
+    Evaluation of the generation through the CUN score.
+    Plots CUN score learning curve.
     """
     
     def __init__(self, init_data, data_name, vocab, gen_max_length, gpus, model_init, n_generate = 1000, warm_up = 0, batch_size = 128, print_fcn = print, model_dir = None, run = 0, results_dir = None, verbose = False):
@@ -670,3 +696,92 @@ class CxUxN(object):
             plt.savefig('{}/{}_Model_Run_{}_History_CxUxN_score.png'.format(self.results_dir, self.data_name, self.run), bbox_inches='tight')
             plt.close()
 ##
+
+class FocalLossCustom(tf.keras.losses.Loss):
+    
+    """Focal loss implementation for scewed data. The code is largely copied from the TensorFlow implementation.`TensorFlow implementation <https://github.com/keras-team/keras-cv/blob/master/keras_cv/losses/focal.py>`_.
+
+    Parameters
+    ----------
+    
+    alpha: float
+        A float value between 0 and 1 representing a weighting factor
+        used to deal with class imbalance. Positive classes and negative
+        classes have alpha and (1 - alpha) as their weighting factors
+        respectively.
+        (Default: 0.25)
+    gamma: float
+        A positive float value representing the tunable focusing parameter.
+        (Default: 0.2)
+    from_logits: bool
+        Whether `y_pred` is expected to be a logits tensor. By default,
+        `y_pred` is assumed to encode a probability distribution.
+        (Default: False)
+    label_smoothing: float
+        Float on interval [0, 1]. If higher than 0 then smooth the
+        labels by squeezing them towards `0.5`, i.e., using
+        `1. - 0.5 * label_smoothing` for the target class and
+        `0.5 * label_smoothing` for the non-target class.
+
+    """
+    
+    def __init__(self, #
+                 alpha=0.25,
+                 gamma=2,
+                 from_logits=False,
+                 label_smoothing=0,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.alpha = float(alpha)
+        self.gamma = float(gamma)
+        self.from_logits = from_logits
+        self.label_smoothing = label_smoothing
+    
+    def _smooth_labels(self, y_true):#
+        return (
+            y_true * (1.0 - self.label_smoothing) + 0.5 * self.label_smoothing
+        )
+    
+    def call(self, y_true, y_pred):
+        y_pred = tf.convert_to_tensor(y_pred)
+        y_true = tf.cast(y_true, y_pred.dtype)
+
+        if self.label_smoothing:
+            y_true = self._smooth_labels(y_true)
+
+        if self.from_logits:
+            y_pred = tf.math.sigmoid(y_pred)
+
+        cross_entropy = tf.keras.metrics.binary_crossentropy(y_true, y_pred)
+
+        alpha = tf.where(
+            tf.equal(y_true, 1.0), self.alpha, (1.0 - self.alpha)
+        )
+        pt = y_true * y_pred + (1.0 - y_true) * (1.0 - y_pred)
+        loss = (
+            alpha
+            * tf.cast(tf.math.pow(1.0 - pt, self.gamma), alpha.dtype)
+            * tf.cast(cross_entropy, alpha.dtype)
+        )
+        # In most losses you mean over the final axis to achieve a scalar
+        # Focal loss however is a special case in that it is meant to focus on
+        # a small number of hard examples in a batch. Most of the time this
+        # comes in the form of thousands of background class boxes and a few
+        # positive boxes.
+        # If you mean over the final axis you will get a number close to 0,
+        # which will encourage your model to exclusively predict background
+        # class boxes.
+        return tf.math.reduce_sum(loss, axis=-1)
+
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "alpha": self.alpha,
+                "gamma": self.gamma,
+                "from_logits": self.from_logits,
+                "label_smoothing": self.label_smoothing,
+            }
+        )
+        return config

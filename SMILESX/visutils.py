@@ -19,7 +19,7 @@ from SMILESX import utils
 logger = logging.getLogger()
 
 # Learning curve plotting
-def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: int, run: int, model_type: str) -> None:
+def learning_curve(train_loss, val_loss, data_skew, save_dir: str, data_name: str, ifold: int, run: int, model_type: str) -> None:
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 
@@ -35,7 +35,10 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
     if model_type == 'regression':
         plt.ylabel('Loss (RMSE, scaled)', fontsize=18)
     else:
-        plt.ylabel('Loss (cross-entropy)', fontsize=18)
+        if data_skew:
+            plt.ylabel('AUC-PRC', fontsize=18)
+        else:
+            plt.ylabel('AUC-ROC', fontsize=18)
     plt.xlabel('Epoch', fontsize=18)
     
     ax.plot(train_loss, color='#3783ad')
@@ -68,12 +71,18 @@ def learning_curve(train_loss, val_loss, save_dir: str, data_name: str, ifold: i
                    labelright=True,
                    left=True,
                    labelleft=True)
-    if ifold is not None: 
-        ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
+    if ifold is not None:
+        if model_type == 'regression':
+            ax.legend(['Train', 'Validation'], loc='upper right', fontsize=14)
+        else:
+            ax.legend(['Train', 'Validation'], loc='upper left', fontsize=14)
         plt.savefig('{}/{}_LearningCurve_Fold_{}_Run_{}.png'\
                     .format(save_dir, data_name, ifold, run), bbox_inches='tight')
     else:
-        ax.legend(['Train'], loc='upper right', fontsize=14)
+        if model_type == 'regression':
+            ax.legend(['Train'], loc='upper right', fontsize=14)
+        else:
+            ax.legend(['Train'], loc='upper left', fontsize=14)
         plt.savefig('{}/{}_LearningCurve_Run_{}.png'\
                 .format(save_dir, data_name, run), bbox_inches='tight')
     plt.close()

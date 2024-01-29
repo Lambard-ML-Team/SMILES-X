@@ -40,6 +40,9 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
         Whether to check SMILES validity with RDKit.
     augmentation: bool
         Whether to perform data augmentation during bayesian optimization process.
+    data_skew: bool
+        Whether the classes in the input data are imbalanced.
+        (Default: False)
     hyper_bounds: dict
         A dictionary of bounds {"param":[bounds]}, where parameter `"param"` can be
         embedding, LSTM, time-distributed dense layer units, batch size or learning
@@ -210,20 +213,31 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
                 model_loss = 'mse'
                 model_metrics = [metrics.mae, metrics.mse]
                 hist_val_name = 'val_mean_squared_error'
-            elif model_type == 'binary_classification':
-                model_loss = 'binary_crossentropy'
-                model_metrics = ['accuracy']
-                hist_val_name = 'val_loss'
-            elif model_type == 'multiclass_classification':
-                model_loss = 'sparse_categorical_crossentropy'
-                model_metrics = ['accuracy']
-                hist_val_name = 'val_loss'
+            else:
+                if model_type == 'binary_classification':
+                    model_loss = 'binary_crossentropy'
+                    model_metrics = ['accuracy']
+                elif model_type == 'multiclass_classification':
+                    model_loss = 'sparse_categorical_crossentropy'
+                    model_metrics = ['accuracy']
+            
+                if data_skew:
+                    hist_val_name = 'val_precision_at_recall'
+                    with strategy.scope():
+                        model_metrics = [tf.keras.metrics.PrecisionAtRecall(0.5)]
+                else:
+                    hist_val_name = 'val_auc'
+                    with strategy.scope():
+                        model_metrics = [tf.keras.metrics.AUC()]
             
             with strategy.scope():
                 batch_size = int(hyper_bo['Batch size']) * strategy.num_replicas_in_sync
                 batch_size_val = min(len(x_train_enum_tokens_tointvec), batch_size)
                 custom_adam = Adam(lr=math.pow(10,-float(hyper_bo['Learning rate'])))
-                model_opt.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
+                if data_skew:
+                    model_train.compile(loss=trainutils.FocalLossCustom(alpha=0.2, gamma=2.0), optimizer=custom_adam, metrics=model_metrics)
+                else:
+                    model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
 
                 history = model_opt.fit_generator(generator=\
                                                   trainutils.DataSequence(x_train_enum_tokens_tointvec,
@@ -242,13 +256,22 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
 
             # Skip the first half of epochs during evaluation
             # Ignore the noisy burn-in period of training
-            best_epoch = np.argmin(history.history['val_loss'][int(bo_epochs//2):])
-            score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
-
-            if math.isnan(score_valid): # treat diverging architectures (rare event)
-                score_valid = math.inf
-            score_valids.append(score_valid)
-
+            if model_type == 'regression':
+                # Minimize loss for regression problems
+                best_epoch = np.argmin(history.history[hist_val_name][int(bo_epochs//2):])
+                score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
+                if math.isnan(score_valid): # treat diverging architectures (rare event)
+                    score_valid = math.inf
+                score_valids.append(score_valid)
+            else:
+                # Maximize AUC-ROC or AUC-PRC for classification problems
+                est_epoch = np.argmax(history.history[hist_val_name][int(bo_epochs//2):])
+                score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
+                if math.isnan(score_valid): # treat diverging architectures (rare event)
+                    score_valid = -math.inf
+                # Negative sign to GpyOpt's implementation of Bayesian optimization only allowing minimization
+                score_valids.append(-score_valid)
+                
         logging.info('Average best validation score: {0:0.4f}'.format(np.mean(score_valids)))
 
         # Return the mean of the validation scores
