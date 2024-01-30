@@ -1051,8 +1051,8 @@ def main(data_smiles,
                                       max_queue_size=batch_size,
                                       use_multiprocessing=False,
                                       workers=1)
-                    history_train_loss += history.history[hist_train_name]
-                    history_val_loss += history.history[hist_val_name]
+                    history_train_loss = history.history[hist_train_name]
+                    history_val_loss = history.history[hist_val_name]
 
                 # Summarize history for losses per epoch
                 visutils.learning_curve(history_train_loss, history_val_loss, data_skew, lcurve_dir, data_name, ifold, run, model_type)
