@@ -333,35 +333,53 @@ class IgnoreBeginningSaveBest(Callback):
         How many epochs to ignore in the beginning of the training before to start
         registering the best validation loss.
         (Default 0)
+    data_skew: bool
+        Whether the classes in the input data are imbalanced.
+        (Default: False)
     last: bool
         In case of multi-step training, defines whether the last step is run.
         Used for final printouts.
         (Default: False)
     """
 
-    def __init__(self, filepath, n_epochs, best_loss = np.Inf, best_epoch = 0, initial_epoch=0, ignore_first_epochs=0, last = False):
+    def __init__(self, filepath, n_epochs, model_type, best_loss=np.Inf, best_epoch=0, initial_epoch=0, ignore_first_epochs=0, data_skew=False, last=False):
         super(IgnoreBeginningSaveBest, self).__init__()
 
         self.filepath = filepath
-        self.ignore_first_epochs = ignore_first_epochs
-        self.initial_epoch = initial_epoch
         self.best_loss = best_loss
         self.best_epoch = best_epoch
+        self.end_epoch = initial_epoch + n_epochs
+        self.ignore_first_epochs = ignore_first_epochs
         self.last = last
-        self.end_epoch = self.initial_epoch + n_epochs
+        self.model_type = model_type
+        self.data_skew = data_skew
 
         # Store the weights at which the minimum loss occurs
         self.best_weights = None
 
     def on_epoch_end(self, epoch, logs=None):
-        current_loss = logs.get('val_loss')
-        # Start saving only starting from a certain epoch
-        if epoch > self.ignore_first_epochs:
-            if np.less(current_loss, self.best_loss):
-                self.best_loss = current_loss
-                # Record the best weights if the current loss result is lower
-                self.best_weights = self.model.get_weights()
-                self.best_epoch = epoch
+        if self.model_type=='regression':
+            current_loss = logs.get('val_loss')
+            # Start saving only starting from a certain epoch
+            if epoch > self.ignore_first_epochs:
+                if np.less(current_loss, self.best_loss):
+                    self.best_loss = current_loss
+                    # Record the best weights if the current loss result is lower
+                    self.best_weights = self.model.get_weights()
+                    self.best_epoch = epoch
+        else:
+            if self.data_skew:
+                loss_name = 'val_precision_at_recall'
+            else:
+                loss_name = 'val_auc'
+            current_loss = logs.get(loss_name)
+            # Start saving only starting from a certain epoch
+            if epoch > self.ignore_first_epochs:
+                if np.less(self.best_loss, current_loss):
+                    self.best_loss = current_loss
+                    # Record the best weights if the current loss result is lower
+                    self.best_weights = self.model.get_weights()
+                    self.best_epoch = epoch
 
     def on_train_end(self, logs=None):
         # Save the model with the best weights if more apochs has spun than requested to ignore
@@ -376,7 +394,7 @@ class IgnoreBeginningSaveBest(Callback):
                     logging.info("Updating current best validation loss in accordance with epoch #{}"\
                                  .format(self.best_epoch))
                     # Return back to the current state to continue training
-                    self.model.set_weights(self.curr_weights)   
+                    self.model.set_weights(self.curr_weights)
             if self.last:
                 logging.info("")
                 logging.info("The best validation loss of {:.2f} is achieved at epoch #{}"\

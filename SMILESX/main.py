@@ -44,10 +44,10 @@ from tensorflow.keras import backend as K
 
 from sklearn.model_selection import GroupKFold, StratifiedKFold
 
-from SMILESX_PRC import utils, token, augm
-from SMILESX_PRC import model, bayopt, geomopt
-from SMILESX_PRC import visutils, trainutils
-from SMILESX_PRC import loadmodel
+from SMILESX import utils, token, augm
+from SMILESX import model, bayopt, geomopt
+from SMILESX import visutils, trainutils
+from SMILESX import loadmodel
 
 np.random.seed(seed=123)
 np.set_printoptions(precision=3)
@@ -557,7 +557,7 @@ def main(data_smiles,
         hist_val_name = 'val_loss'
     else:        
         scale_output = False
-        kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True, random_state=42)
+        kf = StratifiedKFold(n_splits=k_fold_number, shuffle=True)
         kf.get_n_splits(X=data_smiles, y=data_prop)
         kf_splits = kf.split(X=data_smiles, y=data_prop)
         
@@ -798,7 +798,7 @@ def main(data_smiles,
                 logging.info("Trainless geometry optimisation is not requested.")
                 logging.info("")
 
-             # Bayesian optimisationmodel_type
+             # Bayesian optimisation
             if bayopt_mode == 'on':
                 if geomopt_mode == 'on':
                     logging.info("*Note: Geometry-related hyperparameters will not be updated during the Bayesian optimisation.")
@@ -949,7 +949,10 @@ def main(data_smiles,
 
                     # Define callbacks
                     n_epochs_done = 0
-                    best_loss = 0
+                    if model_type=='regression':
+                        best_loss = np.Inf
+                    else:
+                        best_loss = 0
                     best_epoch = 0
                     logging.info("Training:")
                     for i, batch_size in enumerate(batch_size_schedule):
@@ -962,11 +965,13 @@ def main(data_smiles,
                         # Avoids picking up undertrained model
                         # TODO: add early stopping to ignorebeginning
                         ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
+                                                                             model_type=model_type,
                                                                              n_epochs=n_epochs_part,
                                                                              best_loss=best_loss,
                                                                              best_epoch=best_epoch,
                                                                              initial_epoch=n_epochs_done,
                                                                              ignore_first_epochs=ignore_first_epochs,
+                                                                             data_skew=data_skew,
                                                                              last=last)
                         logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
                         # Default callback list
@@ -1003,11 +1008,17 @@ def main(data_smiles,
                         best_epoch = ignorebeginning.best_epoch
                         n_epochs_done += n_epochs_part
                 else:
+                    if model_type=='regression':
+                        best_loss = np.Inf
+                    else:
+                        best_loss = 0
                     ignorebeginning = trainutils.IgnoreBeginningSaveBest(filepath=filepath,
+                                                                         model_type=model_type,
                                                                          n_epochs=n_epochs,
-                                                                         best_loss=0,
+                                                                         best_loss=best_loss,
                                                                          initial_epoch=0,
-                                                                         ignore_first_epochs=ignore_first_epochs)
+                                                                         ignore_first_epochs=ignore_first_epochs,
+                                                                         data_skew=data_skew)
                     logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
                     # Default callback list
                     callbacks_list = [ignorebeginning, logcallback]
@@ -1051,11 +1062,19 @@ def main(data_smiles,
                                       max_queue_size=batch_size,
                                       use_multiprocessing=False,
                                       workers=1)
+
                     history_train_loss = history.history[hist_train_name]
                     history_val_loss = history.history[hist_val_name]
 
                 # Summarize history for losses per epoch
-                visutils.learning_curve(history_train_loss, history_val_loss, data_skew, lcurve_dir, data_name, ifold, run, model_type)
+                visutils.learning_curve(history_train_loss,
+                                        history_val_loss,
+                                        data_skew,
+                                        lcurve_dir,
+                                        data_name,
+                                        ifold,
+                                        run,
+                                        model_type)
 
                 logging.info("Evaluating performance of the trained model...")
                 logging.info("")

@@ -7,7 +7,7 @@
 from scipy import stats
 import numpy as np
 
-np.random.seed(seed=123)
+np.random.seed(seed=21)
 
 ##
 

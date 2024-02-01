@@ -23,8 +23,6 @@ def learning_curve(train_loss, val_loss, data_skew, save_dir: str, data_name: st
 
     fig = plt.figure(figsize=(6.75, 5), dpi=200)
 
-#     plt.title('')
-
     ax = fig.add_subplot(111)
 
     if val_loss is not None:
