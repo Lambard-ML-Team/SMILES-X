@@ -1019,7 +1019,7 @@ def main(data_smiles,
                                                                          initial_epoch=0,
                                                                          ignore_first_epochs=ignore_first_epochs,
                                                                          data_skew=data_skew)
-                    logcallback = trainutils.LoggingCallback(print_fcn=logging.info,verbose=train_verbose)
+                    logcallback = trainutils.LoggingCallback(print_fcn=logging.info, verbose=train_verbose)
                     # Default callback list
                     callbacks_list = [ignorebeginning, logcallback]
                     # Additional callbacks

@@ -13,13 +13,14 @@ import pandas as pd
 
 import GPy, GPyOpt
 
+import tensorflow as tf
 from tensorflow.keras import metrics
 from tensorflow.keras import backend as K
 from tensorflow.keras.optimizers import Adam, SGD
 
 from SMILESX import utils, augm, token, model, trainutils
 
-def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_length, check_smiles, augmentation, hyper_bounds, hyper_opt, dense_depth, bo_rounds, bo_epochs, bo_runs, strategy, model_type, output_n_nodes, scale_output, pretrained_model=None):
+def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_length, check_smiles, augmentation, data_skew, hyper_bounds, hyper_opt, dense_depth, bo_rounds, bo_epochs, bo_runs, strategy, model_type, output_n_nodes, scale_output, pretrained_model=None):
     '''Bayesian optimization of hyperparameters.
 
     Parameters
@@ -235,9 +236,9 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
                 batch_size_val = min(len(x_train_enum_tokens_tointvec), batch_size)
                 custom_adam = Adam(lr=math.pow(10,-float(hyper_bo['Learning rate'])))
                 if data_skew:
-                    model_train.compile(loss=trainutils.FocalLossCustom(alpha=0.2, gamma=2.0), optimizer=custom_adam, metrics=model_metrics)
+                    model_opt.compile(loss=trainutils.FocalLossCustom(alpha=0.2, gamma=2.0), optimizer=custom_adam, metrics=model_metrics)
                 else:
-                    model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
+                    model_opt.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
 
                 history = model_opt.fit_generator(generator=\
                                                   trainutils.DataSequence(x_train_enum_tokens_tointvec,
@@ -260,17 +261,15 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
                 # Minimize loss for regression problems
                 best_epoch = np.argmin(history.history[hist_val_name][int(bo_epochs//2):])
                 score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
-                if math.isnan(score_valid): # treat diverging architectures (rare event)
-                    score_valid = math.inf
-                score_valids.append(score_valid)
             else:
                 # Maximize AUC-ROC or AUC-PRC for classification problems
-                est_epoch = np.argmax(history.history[hist_val_name][int(bo_epochs//2):])
-                score_valid = history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
-                if math.isnan(score_valid): # treat diverging architectures (rare event)
-                    score_valid = -math.inf
-                # Negative sign to GpyOpt's implementation of Bayesian optimization only allowing minimization
-                score_valids.append(-score_valid)
+                best_epoch = np.argmax(history.history[hist_val_name][int(bo_epochs//2):])
+                score_valid = -1 * history.history[hist_val_name][best_epoch + int(bo_epochs//2)]
+
+            if math.isnan(score_valid): # treat diverging architectures (rare event)
+                score_valid = math.inf
+            # Negative sign to GpyOpt's implementation of Bayesian optimization only allowing minimization
+            score_valids.append(score_valid)
                 
         logging.info('Average best validation score: {0:0.4f}'.format(np.mean(score_valids)))
 
