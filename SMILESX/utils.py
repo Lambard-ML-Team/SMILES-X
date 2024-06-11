@@ -129,7 +129,7 @@ def log_setup(save_dir, name, verbose):
     
     # Setting up logging
     currentDT = datetime.datetime.now()
-    strDT = currentDT.strftime("%Y-%m-%d_%H:%M:%S")
+    strDT = currentDT.strftime("%Y-%m-%d_%H-%M-%S")
        
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)    

@@ -389,7 +389,7 @@ def output_prec(val, prec):
             else:
                 precision = '1.0'
         else:
-            precision = '0.' + str(np.int(np.abs(np.floor(logval)) + prec - 1))
+            precision = '0.' + str(int(np.abs(np.floor(logval)) + prec - 1))
     return precision
 ##
 

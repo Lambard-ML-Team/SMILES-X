@@ -222,7 +222,7 @@ def bayopt_run(smiles, prop, extra, train_val_idx, smiles_concat, tokens, max_le
             with strategy.scope():
                 batch_size = int(hyper_bo['Batch size']) * strategy.num_replicas_in_sync
                 batch_size_val = min(len(x_train_enum_tokens_tointvec), batch_size)
-                custom_adam = Adam(lr=math.pow(10,-float(hyper_bo['Learning rate'])))
+                custom_adam = Adam(learning_rate=math.pow(10,-float(hyper_bo['Learning rate'])))
                 model_opt.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
 
                 history = model_opt.fit_generator(generator=\
