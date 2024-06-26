@@ -937,8 +937,7 @@ def main(data_smiles,
                                       epochs=n_epochs_done + n_epochs_part,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
-                                      batch_size=batch_size,
-                                      use_multiprocessing=False,
+                                      batch_size=batch_size,                                      
                                       workers=1)
                         history_train_loss += history.history['loss']
                         history_val_loss += history.history['val_loss']
@@ -991,8 +990,7 @@ def main(data_smiles,
                                       epochs=n_epochs,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
-                                      batch_size=batch_size,
-                                      use_multiprocessing=False,
+                                      batch_size=batch_size,                                      
                                       workers=1)
                     history_train_loss = history.history['loss']
                     history_val_loss = history.history['val_loss']
