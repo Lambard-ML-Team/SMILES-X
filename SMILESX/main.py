@@ -938,7 +938,7 @@ def main(data_smiles,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
                                       batch_size=batch_size,                                      
-                                      workers=1)
+                                      )
                         history_train_loss += history.history['loss']
                         history_val_loss += history.history['val_loss']
                         best_loss = ignorebeginning.best_loss
@@ -991,7 +991,7 @@ def main(data_smiles,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
                                       batch_size=batch_size,                                      
-                                      workers=1)
+                                      )
                     history_train_loss = history.history['loss']
                     history_val_loss = history.history['val_loss']
 
