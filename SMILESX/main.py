@@ -524,7 +524,7 @@ def main(data_smiles,
         kf = GroupKFold(n_splits=k_fold_number)
         kf.get_n_splits(X=data_smiles, groups=groups)
         kf_splits = kf.split(X=data_smiles, groups=groups)
-        model_loss = 'MSE'
+        model_loss = 'mean_squared_error'
         model_metrics = [metrics.mae, metrics.mse]
     elif model_type == 'classification':
         scale_output = False
