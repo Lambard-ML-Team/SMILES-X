@@ -18,7 +18,7 @@ functions:
 import os
 import sys
 import glob
-import mathmax_
+# import mathmax_
 import time
 import logging
 import datetime
