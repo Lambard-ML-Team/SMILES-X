@@ -18,7 +18,7 @@ functions:
 import os
 import sys
 import glob
-import math
+import mathmax_
 import time
 import logging
 import datetime
@@ -990,7 +990,7 @@ def main(data_smiles,
                                       epochs=n_epochs,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
-                                      max_queue_size=batch_size,
+                                      max_q_size=batch_size,
                                       use_multiprocessing=False,
                                       workers=1)
                     history_train_loss = history.history['loss']
