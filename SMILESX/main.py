@@ -856,7 +856,7 @@ def main(data_smiles,
                                                                 tdense_units=hyper_opt["TD dense"],
                                                                 dense_depth=dense_depth,
                                                                 model_type=model_type)
-                        custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
+                        custom_adam = Adam(learning_rate=math.pow(10,-float(hyper_opt["Learning rate"])))
                         model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
                     if (nfold==0 and run==0):
                         logging.info("Model summary:")
