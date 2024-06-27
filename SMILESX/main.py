@@ -18,6 +18,7 @@ functions:
 import os
 import sys
 import glob
+# import mathmax_
 import math
 import time
 import logging
@@ -523,7 +524,7 @@ def main(data_smiles,
         kf = GroupKFold(n_splits=k_fold_number)
         kf.get_n_splits(X=data_smiles, groups=groups)
         kf_splits = kf.split(X=data_smiles, groups=groups)
-        model_loss = 'mse'
+        model_loss = 'mean_squared_error'
         model_metrics = [metrics.mae, metrics.mse]
     elif model_type == 'classification':
         scale_output = False
@@ -856,7 +857,7 @@ def main(data_smiles,
                                                                 tdense_units=hyper_opt["TD dense"],
                                                                 dense_depth=dense_depth,
                                                                 model_type=model_type)
-                        custom_adam = Adam(lr=math.pow(10,-float(hyper_opt["Learning rate"])))
+                        custom_adam = Adam(learning_rate=math.pow(10,-float(hyper_opt["Learning rate"])))
                         model_train.compile(loss=model_loss, optimizer=custom_adam, metrics=model_metrics)
                     if (nfold==0 and run==0):
                         logging.info("Model summary:")
@@ -936,9 +937,8 @@ def main(data_smiles,
                                       epochs=n_epochs_done + n_epochs_part,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
-                                      max_queue_size=batch_size,
-                                      use_multiprocessing=False,
-                                      workers=1)
+                                      batch_size=batch_size,                                      
+                                      )
                         history_train_loss += history.history['loss']
                         history_val_loss += history.history['val_loss']
                         best_loss = ignorebeginning.best_loss
@@ -990,9 +990,8 @@ def main(data_smiles,
                                       epochs=n_epochs,
                                       callbacks=callbacks_list,
                                       verbose=train_verbose,
-                                      max_queue_size=batch_size,
-                                      use_multiprocessing=False,
-                                      workers=1)
+                                      batch_size=batch_size,                                      
+                                      )
                     history_train_loss = history.history['loss']
                     history_val_loss = history.history['val_loss']
 
